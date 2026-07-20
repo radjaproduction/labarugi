@@ -1,0 +1,752 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, minimum-scale=1.0, maximum-scale=1.0, viewport-fit=cover">
+<title>Laporan Keuangan - Radja Production</title>
+<meta name="theme-color" content="#F6DBB6">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Laporan Keuangan">
+
+<link rel="manifest" href="./manifest.json">
+<link rel="apple-touch-icon" href="./icon-192.png">
+<link rel="icon" type="image/png" sizes="192x192" href="./icon-192.png">
+<link rel="icon" type="image/png" sizes="512x512" href="./icon-512.png">
+
+<script>
+  // ==================== NOTIFIKASI UPDATE VERSI APLIKASI ====================
+  // Cara kerja: browser otomatis cek ulang service-worker.js tiap kali app dibuka/foreground.
+  // Kalau isi file service-worker.js di server berbeda dari yang tersimpan di HP (artinya
+  // ada versi baru yang di-deploy), browser akan install SW baru di background lalu event
+  // 'updatefound' terpicu. Setelah SW baru siap ('installed') DAN sebelumnya sudah ada SW aktif
+  // (bukan pertama kali install), berarti ini update -> tampilkan banner.
+  let _swRegistrationGlobal = null;
+  let _swUpdateReady = false;
+
+  function tampilkanBannerUpdate() {
+    if (_swUpdateReady) return;
+    _swUpdateReady = true;
+    const banner = document.getElementById('app-update-banner');
+    if (banner) banner.style.display = 'block';
+  }
+
+  function terapkanUpdateAplikasi() {
+    const banner = document.getElementById('app-update-banner');
+    if (banner) banner.style.display = 'none';
+    if (_swRegistrationGlobal && _swRegistrationGlobal.waiting) {
+      _swRegistrationGlobal.waiting.postMessage({ type: 'SKIP_WAITING' });
+    } else {
+      location.reload(true);
+    }
+  }
+
+  if ('serviceWorker' in navigator) {
+    window.addEventListener('load', () => {
+      navigator.serviceWorker.register('./service-worker.js')
+        .then(reg => {
+          console.log('✅ SW registered:', reg.scope);
+          _swRegistrationGlobal = reg;
+          if (reg.waiting && navigator.serviceWorker.controller) {
+            tampilkanBannerUpdate();
+          }
+          reg.addEventListener('updatefound', () => {
+            const newWorker = reg.installing;
+            if (!newWorker) return;
+            newWorker.addEventListener('statechange', () => {
+              if (newWorker.state === 'installed' && navigator.serviceWorker.controller) {
+                tampilkanBannerUpdate();
+              }
+            });
+          });
+          document.addEventListener('visibilitychange', () => {
+            if (document.visibilityState === 'visible') reg.update().catch(() => {});
+          });
+          setInterval(() => reg.update().catch(() => {}), 15 * 60 * 1000);
+        })
+        .catch(err => console.log('❌ SW error:', err));
+
+      let _swAlreadyRefreshed = false;
+      navigator.serviceWorker.addEventListener('controllerchange', () => {
+        if (_swAlreadyRefreshed) return;
+        _swAlreadyRefreshed = true;
+        location.reload();
+      });
+    });
+  }
+</script>
+
+<script src="https://cdn.tailwindcss.com"></script>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;600;700;900&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+
+<script>
+  tailwind.config = {
+    theme: { extend: { colors: {
+      darkBg: '#F6DBB6', cardBg: '#FFEFDB', borderDark: '#FFB144',
+    } } }
+  }
+</script>
+<style>
+  :root {
+    --brand-main: #ff8c00;
+    --brand-gradient: linear-gradient(90deg, #ff8c00 0%, #ffb347 100%);
+  }
+  * { box-sizing: border-box; }
+  html { height: 100%; height: -webkit-fill-available; background-color: #F6DBB6; }
+  body {
+    background-color: #F6DBB6; color: #1a1d24;
+    font-family: 'Montserrat', sans-serif;
+    -webkit-tap-highlight-color: transparent;
+    min-height: 100vh; min-height: -webkit-fill-available;
+    width: 100%; overflow-x: hidden;
+    padding-top: env(safe-area-inset-top);
+    padding-bottom: env(safe-area-inset-bottom);
+    padding-left: env(safe-area-inset-left);
+    padding-right: env(safe-area-inset-right);
+    user-select: none; -webkit-user-select: none;
+  }
+  input, textarea, [contenteditable] { user-select: text !important; -webkit-user-select: text !important; }
+  ::-webkit-scrollbar { display: none; }
+  html, body { overscroll-behavior-y: none; }
+  .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+  .brand-text { color: var(--brand-main) !important; }
+  .brand-gradient-bg { background: var(--brand-gradient) !important; }
+  .dashed-border-brand { border: 2px dashed #FFB144 !important; }
+  .pin-btn { position: relative; overflow: hidden; transition: transform .06s ease, background .06s ease; -webkit-tap-highlight-color: transparent; touch-action: manipulation; user-select: none; }
+  .pin-btn.pin-pressed { background: var(--brand-main) !important; border-color: #FFB144 !important; color: #000 !important; transform: scale(0.88); }
+  .pin-del.pin-pressed { background: rgba(255,177,68,0.3) !important; border-color: #FFB144 !important; color: var(--brand-main) !important; transform: scale(0.88); }
+  #loading-overlay {
+    position: fixed; inset: 0; z-index: 9999; background: #F6DBB6;
+    display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 14px;
+  }
+  .brand-loader svg { width: 64px; height: 44px; animation: pulseLoader 1.1s ease-in-out infinite; }
+  @keyframes pulseLoader { 0%,100%{opacity:.35;transform:scale(.94)} 50%{opacity:1;transform:scale(1)} }
+  .sheet-overlay { position: fixed; inset: 0; z-index: 9990; background: rgba(0,0,0,0.7); display: none; align-items: flex-end; justify-content: center; }
+  .sheet-overlay.active { display: flex; }
+  .lk-tab-bar { display: flex; gap: 6px; background: var(--brand-main-soft, #FFEFDB); border: 2px solid #FFB144; border-radius: 14px; padding: 4px; }
+  .lk-tab-btn { flex: 1; border: none; background: transparent; color: #1a1d24; font-weight: 900; font-size: 11px; letter-spacing: .03em; padding: 9px 6px; border-radius: 10px; display: flex; align-items: center; justify-content: center; gap: 6px; transition: background .15s ease, color .15s ease; -webkit-tap-highlight-color: transparent; touch-action: manipulation; }
+  .lk-tab-btn .lk-tab-badge { font-size: 8px; font-weight: 900; background: rgba(0,0,0,0.12); padding: 1px 6px; border-radius: 999px; }
+  .lk-tab-btn.active { background: var(--brand-gradient); color: #000; box-shadow: 0 2px 8px rgba(255,140,0,0.35); }
+  .lk-tab-btn.active .lk-tab-badge { background: rgba(0,0,0,0.18); }
+  .lk-tab-content { display: none; flex-direction: column; gap: 12px; }
+  .lk-tab-content.active { display: flex; }
+  @keyframes lkTabFade { from { opacity: 0; transform: translateY(4px); } to { opacity: 1; transform: translateY(0); } }
+  .lk-tab-content.active { animation: lkTabFade .18s ease; }
+</style>
+</head>
+<body class="no-scrollbar">
+
+<div id="loading-overlay">
+  <div class="brand-loader">
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 3996.74 2715.33"><path fill="#ff8c00" d="M1379.8 2078.49l-339.7 -450.38 -797.43 0 819.99 1087.21 369.69 0 427.79 0 778.91 0c746.73,0 1357.68,-610.94 1357.68,-1357.67 0,-746.72 -610.94,-1357.66 -1357.68,-1357.66l-685.55 0c242.92,127.17 422.11,359.81 476.47,636.83l209.08 0c396.43,0 720.83,324.36 720.83,720.83 0,396.44 -324.35,720.83 -720.83,720.83l-1259.26 0zm906.78 -104.15l-261.1 -346.23 -0.04 0 -84.57 -112.11c240.44,-141.62 402.14,-403.18 402.14,-701.94 0,-448.98 -365.11,-814.06 -814.05,-814.06l-1528.97 0 480.33 636.83 1048.65 0c97.46,0 177.22,79.74 177.22,177.22 0,97.51 -79.76,177.25 -177.22,177.25l-781.29 0 741.44 983.04 797.46 0z"/></svg>
+  </div>
+  <span class="text-xs text-black font-bold tracking-widest">MEMUAT LAPORAN...</span>
+</div>
+
+<!-- PIN LOGIN (pakai PIN yang sama dengan Aplikasi Inventory) -->
+<div id="pin-login-screen" style="display:none;position:fixed;inset:0;background:radial-gradient(ellipse at 50% 20%, rgba(255,140,0,0.55) 0%, rgba(180,80,0,0.25) 35%, #F6DBB6 70%), #F6DBB6;z-index:9995;flex-direction:column;align-items:center;justify-content:center;padding:24px;gap:0;">
+  <div class="w-full max-w-xs flex flex-col items-center gap-5 mx-auto">
+    <div class="brand-gradient-bg rounded-2xl px-6 py-4 text-center w-full">
+      <div class="text-lg font-black text-black">LAPORAN KEUANGAN</div>
+      <div class="text-[10px] text-black/70 font-bold mt-0.5">Masukkan PIN Radja Production untuk masuk</div>
+    </div>
+    <div class="flex gap-4 justify-center mt-1" id="pin-login-dots">
+      <div class="w-5 h-5 rounded-full border-4 border-gray-600 bg-transparent transition-all" id="pld-0"></div>
+      <div class="w-5 h-5 rounded-full border-4 border-gray-600 bg-transparent transition-all" id="pld-1"></div>
+      <div class="w-5 h-5 rounded-full border-4 border-gray-600 bg-transparent transition-all" id="pld-2"></div>
+      <div class="w-5 h-5 rounded-full border-4 border-gray-600 bg-transparent transition-all" id="pld-3"></div>
+    </div>
+    <div id="pin-login-error" class="text-red-500 text-[11px] font-bold text-center min-h-[18px]"></div>
+    <div class="grid grid-cols-3 gap-3 w-full">
+      <button onclick="pinFlash(this);pinLoginInput('1')" class="pin-btn bg-cardBg border-2 border-borderDark rounded-2xl py-4 text-[#1a1d24] text-xl font-black">1</button>
+      <button onclick="pinFlash(this);pinLoginInput('2')" class="pin-btn bg-cardBg border-2 border-borderDark rounded-2xl py-4 text-[#1a1d24] text-xl font-black">2</button>
+      <button onclick="pinFlash(this);pinLoginInput('3')" class="pin-btn bg-cardBg border-2 border-borderDark rounded-2xl py-4 text-[#1a1d24] text-xl font-black">3</button>
+      <button onclick="pinFlash(this);pinLoginInput('4')" class="pin-btn bg-cardBg border-2 border-borderDark rounded-2xl py-4 text-[#1a1d24] text-xl font-black">4</button>
+      <button onclick="pinFlash(this);pinLoginInput('5')" class="pin-btn bg-cardBg border-2 border-borderDark rounded-2xl py-4 text-[#1a1d24] text-xl font-black">5</button>
+      <button onclick="pinFlash(this);pinLoginInput('6')" class="pin-btn bg-cardBg border-2 border-borderDark rounded-2xl py-4 text-[#1a1d24] text-xl font-black">6</button>
+      <button onclick="pinFlash(this);pinLoginInput('7')" class="pin-btn bg-cardBg border-2 border-borderDark rounded-2xl py-4 text-[#1a1d24] text-xl font-black">7</button>
+      <button onclick="pinFlash(this);pinLoginInput('8')" class="pin-btn bg-cardBg border-2 border-borderDark rounded-2xl py-4 text-[#1a1d24] text-xl font-black">8</button>
+      <button onclick="pinFlash(this);pinLoginInput('9')" class="pin-btn bg-cardBg border-2 border-borderDark rounded-2xl py-4 text-[#1a1d24] text-xl font-black">9</button>
+      <div></div>
+      <button onclick="pinFlash(this);pinLoginInput('0')" class="pin-btn bg-cardBg border-2 border-borderDark rounded-2xl py-4 text-[#1a1d24] text-xl font-black">0</button>
+      <button onclick="pinFlash(this);pinLoginHapus()" class="pin-btn pin-del bg-cardBg border-2 border-borderDark rounded-2xl py-4 text-black text-lg"><i class="fa-solid fa-delete-left"></i></button>
+    </div>
+  </div>
+</div>
+
+<!-- APP CONTENT -->
+<div id="app-content" class="hidden flex-col p-4 gap-4 max-w-md mx-auto pb-16">
+
+  <!-- HERO -->
+  <div class="flex items-stretch -mx-4 -mt-0 mb-1 shadow-[0_4px_16px_rgba(255,140,0,0.35)] brand-gradient-bg rounded-b-2xl overflow-hidden">
+    <div class="w-20 h-[72px] flex items-center justify-center flex-shrink-0 z-10 relative bg-black/5 border-r-2 border-black/10"><i class="fa-solid fa-chart-line text-3xl text-black"></i></div>
+    <div class="h-[72px] flex flex-col justify-center px-4 flex-grow z-10 relative">
+      <h1 class="text-[24px] font-black text-black leading-none tracking-wide mb-1">LAPORAN <span>KEUANGAN</span></h1>
+      <div class="w-full h-[1.5px] bg-white/30 mb-1"></div>
+      <h2 class="text-[10px] font-bold text-black tracking-[0.15em] leading-none mt-0.5 uppercase">RADJA PRODUCTION</h2>
+    </div>
+  </div>
+
+  <!-- FILTER PERIODE -->
+  <div class="bg-cardBg rounded-xl p-3 border-2 border-borderDark flex flex-col gap-3">
+    <div class="text-[11px] font-black text-black flex items-center gap-1.5"><i class="fa-solid fa-calendar-days brand-text text-[10px]"></i> FILTER PERIODE</div>
+    <div class="grid grid-cols-4 gap-1.5">
+      <button id="lk-quick-minggu-ini" onclick="setFilterQuick('minggu-ini')" class="py-2.5 rounded-lg text-[8.5px] font-black text-black bg-darkBg border-2 border-borderDark">MINGGU INI</button>
+      <button id="lk-quick-minggu-lalu" onclick="setFilterQuick('minggu-lalu')" class="py-2.5 rounded-lg text-[8.5px] font-black text-black bg-darkBg border-2 border-borderDark">MINGGU LALU</button>
+      <button id="lk-quick-bulan-ini" onclick="setFilterQuick('bulan-ini')" class="py-2.5 rounded-lg text-[8.5px] font-black text-black bg-darkBg border-2 border-borderDark">BULAN INI</button>
+      <button id="lk-quick-semua" onclick="setFilterQuick('semua')" class="py-2.5 rounded-lg text-[8.5px] font-black text-black border-2 border-borderDark" style="background:linear-gradient(90deg,#ff8c00,#ffb347);">SEMUA</button>
+    </div>
+    <div class="flex flex-col gap-2">
+      <div class="text-[8px] font-black text-black tracking-wider">ATAU PILIH PERIODE MANUAL:</div>
+      <div class="flex gap-2">
+        <div class="flex flex-col flex-1 min-w-0"><label class="text-[8px] text-black font-bold mb-0.5 leading-none">DARI</label><input type="date" id="lk-filter-dari" class="w-full bg-darkBg text-black text-[11px] px-2 py-2.5 rounded-lg border-2 border-borderDark outline-none"></div>
+        <div class="flex flex-col flex-1 min-w-0"><label class="text-[8px] text-black font-bold mb-0.5 leading-none">SAMPAI</label><input type="date" id="lk-filter-sampai" class="w-full bg-darkBg text-black text-[11px] px-2 py-2.5 rounded-lg border-2 border-borderDark outline-none"></div>
+      </div>
+      <button onclick="applyFilterManual()" class="w-full py-2.5 text-[10px] font-black rounded-lg text-white flex items-center justify-center gap-1.5" style="background:linear-gradient(90deg,#16a34a,#22c55e);"><i class="fa-solid fa-check"></i> TERAPKAN PERIODE MANUAL</button>
+    </div>
+    <div class="text-center text-[9px] font-bold text-black bg-darkBg rounded-lg py-2 border-2 border-dashed border-borderDark">
+      <i class="fa-solid fa-eye mr-1"></i> Menampilkan: <span id="lk-periode-label">SEMUA DATA</span>
+    </div>
+  </div>
+
+  <!-- TAB BAR -->
+  <div class="lk-tab-bar">
+    <button id="lk-tab-btn-ringkasan" onclick="switchLkTab('ringkasan')" class="lk-tab-btn active"><i class="fa-solid fa-chart-pie"></i> RINGKASAN</button>
+    <button id="lk-tab-btn-beban" onclick="switchLkTab('beban')" class="lk-tab-btn"><i class="fa-solid fa-file-invoice-dollar"></i> BEBAN <span id="lk-tab-badge-beban" class="lk-tab-badge">0</span></button>
+  </div>
+
+  <!-- TAB: RINGKASAN -->
+  <div id="lk-tab-ringkasan" class="lk-tab-content active">
+
+  <!-- SUMMARY LABA KOTOR -->
+  <div class="grid grid-cols-2 gap-2">
+    <div class="bg-cardBg rounded-xl p-3 border-2 border-borderDark flex flex-col gap-1">
+      <div class="text-[8px] font-black text-black tracking-wider flex items-center gap-1"><i class="fa-solid fa-cart-shopping text-[9px]"></i> TOTAL OMSET</div>
+      <div id="lk-total-omset" class="text-[15px] font-black text-black">Rp 0</div>
+    </div>
+    <div class="bg-cardBg rounded-xl p-3 border-2 border-borderDark flex flex-col gap-1">
+      <div class="text-[8px] font-black text-black tracking-wider flex items-center gap-1"><i class="fa-solid fa-box text-[9px]"></i> TOTAL MODAL (HPP)</div>
+      <div id="lk-total-modal" class="text-[15px] font-black text-black">Rp 0</div>
+    </div>
+  </div>
+  <div class="rounded-xl p-4 border-2 flex flex-col gap-1" style="background:linear-gradient(135deg,#16a34a,#15803d);border-color:#166534;">
+    <div class="text-[9px] font-black text-white/90 tracking-wider flex items-center gap-1"><i class="fa-solid fa-sack-dollar text-[10px]"></i> LABA KOTOR</div>
+    <div id="lk-total-laba-kotor" class="text-[24px] font-black text-white leading-none">Rp 0</div>
+    <div id="lk-margin-kotor" class="text-[10px] font-bold text-white/80 mt-1">Margin: 0%</div>
+  </div>
+
+  <!-- LABA BERSIH (dipindah ke tab Ringkasan) -->
+  <div id="lk-laba-bersih-card" class="rounded-xl p-4 border-2 flex flex-col gap-1" style="background:linear-gradient(135deg,#16a34a,#15803d);border-color:#166534;">
+    <div class="text-[10px] font-black text-white/90 tracking-wider flex items-center gap-1"><i class="fa-solid fa-vault text-[11px]"></i> LABA BERSIH</div>
+    <div id="lk-total-laba-bersih" class="text-[28px] font-black text-white leading-none">Rp 0</div>
+    <div id="lk-margin-bersih" class="text-[10px] font-bold text-white/80 mt-1">Margin: 0%</div>
+  </div>
+
+  <div class="bg-yellow-500/10 border-2 border-yellow-500/25 rounded-lg px-3 py-2.5 text-[9px] text-black leading-relaxed">
+    <i class="fa-solid fa-circle-info mr-1"></i> Laba Bersih = Laba Kotor − (Payroll otomatis + semua biaya manual). Payroll ditarik otomatis dari aplikasi Payroll untuk periode yang sama; biaya lain diinput manual di sini.
+  </div>
+
+  </div>
+  <!-- /TAB: RINGKASAN -->
+
+  <!-- TAB: BEBAN -->
+  <div id="lk-tab-beban" class="lk-tab-content">
+
+  <!-- BEBAN OPERASIONAL -->
+  <div class="bg-cardBg rounded-xl border-2 border-borderDark overflow-hidden">
+    <div class="px-3 py-2.5 text-[10px] font-black text-black border-b-2 border-borderDark flex items-center justify-between">
+      <span><i class="fa-solid fa-file-invoice-dollar brand-text text-[10px] mr-1.5"></i>BEBAN OPERASIONAL</span>
+      <button onclick="bukaTambahBeban()" class="bg-black/10 hover:bg-black/20 px-2.5 py-1 rounded-lg text-[9px] font-black flex items-center gap-1"><i class="fa-solid fa-plus"></i> TAMBAH</button>
+    </div>
+
+    <!-- Row payroll otomatis -->
+    <div class="flex items-center justify-between px-3 py-2.5 border-b-2 border-borderDark bg-black/5">
+      <div class="min-w-0 flex-1">
+        <div class="text-[10.5px] font-bold text-black flex items-center gap-1.5">
+          <i class="fa-solid fa-users text-[10px] brand-text"></i> PAYROLL
+          <span class="text-[7px] font-black bg-blue-500/15 text-blue-700 px-1.5 py-0.5 rounded-full">OTOMATIS</span>
+        </div>
+        <div class="text-[8.5px] text-black/60" id="lk-payroll-status">Ditarik dari Aplikasi Payroll</div>
+      </div>
+      <div class="text-right flex-shrink-0 ml-2 flex items-center gap-2">
+        <div id="lk-payroll-total" class="text-[12px] font-black text-red-600">Rp 0</div>
+        <button onclick="muatPayroll()" title="Refresh data payroll" class="w-7 h-7 rounded-lg bg-black/10 hover:bg-black/20 flex items-center justify-center text-black text-[10px]"><i class="fa-solid fa-rotate" id="lk-payroll-refresh-icon"></i></button>
+      </div>
+    </div>
+
+    <!-- List biaya manual -->
+    <div id="lk-beban-list" class="flex flex-col"></div>
+
+    <!-- Banner jika tabel belum ada -->
+    <div id="lk-beban-missing-banner" class="hidden p-3 border-t-2 border-red-400/40 bg-red-500/10">
+      <div class="text-[10px] font-black text-red-700 mb-1"><i class="fa-solid fa-triangle-exclamation mr-1"></i>TABEL BELUM DIBUAT</div>
+      <div class="text-[9px] text-black/80 leading-relaxed mb-2">Tabel <b>beban_operasional</b> belum ada di database. Jalankan SQL ini sekali di Supabase SQL Editor (project Inventory):</div>
+      <textarea readonly class="w-full text-[8px] font-mono bg-white border border-red-300 rounded-lg p-2" rows="6" onclick="this.select()">CREATE TABLE IF NOT EXISTS beban_operasional (
+    id bigint generated by default as identity primary key,
+    kategori text not null,
+    keterangan text,
+    nominal integer default 0,
+    tanggal text not null,
+    created_at timestamptz default now()
+);
+ALTER TABLE beban_operasional DISABLE ROW LEVEL SECURITY;
+DO $$
+BEGIN
+  BEGIN ALTER PUBLICATION supabase_realtime ADD TABLE beban_operasional; EXCEPTION WHEN duplicate_object THEN NULL; END;
+END $$;</textarea>
+      <button onclick="muatBebanManual()" class="w-full mt-2 py-2 text-[9px] font-black rounded-lg text-white" style="background:linear-gradient(90deg,#16a34a,#22c55e);"><i class="fa-solid fa-rotate mr-1"></i> SUDAH DIJALANKAN, CEK LAGI</button>
+    </div>
+  </div>
+
+  <!-- TOTAL BEBAN -->
+  <div class="rounded-xl p-4 border-2 flex flex-col gap-1" style="background:linear-gradient(135deg,#dc2626,#991b1b);border-color:#7f1d1d;">
+    <div class="text-[9px] font-black text-white/90 tracking-wider flex items-center gap-1"><i class="fa-solid fa-arrow-trend-down text-[10px]"></i> TOTAL BEBAN OPERASIONAL</div>
+    <div id="lk-total-beban" class="text-[22px] font-black text-white leading-none">Rp 0</div>
+  </div>
+
+  </div>
+  <!-- /TAB: BEBAN -->
+
+</div>
+
+<!-- SHEET TAMBAH BEBAN -->
+<div id="sheet-tambah-beban" class="sheet-overlay" onclick="if(event.target===this) tutupTambahBeban()">
+  <div style="background:#ffffff;border-radius:20px 20px 0 0;padding:20px 20px 28px;width:100%;max-width:480px;border-top:2px solid #ff8c00;">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px;">
+      <span class="text-[13px] font-black brand-text"><i class="fa-solid fa-file-invoice-dollar mr-1.5"></i>TAMBAH BIAYA</span>
+      <button onclick="tutupTambahBeban()" style="background:none;border:none;font-size:20px;cursor:pointer;">&times;</button>
+    </div>
+    <div class="flex flex-col gap-3">
+      <div class="flex flex-col gap-1.5">
+        <label class="text-[10px] font-bold text-black tracking-wider">JENIS BIAYA</label>
+        <input id="beban-kategori" list="beban-kategori-list" type="text" placeholder="mis. Operasional, Bahan, Listrik, Sewa..." class="w-full bg-darkBg border-2 border-borderDark rounded-lg px-3 py-2.5 text-xs text-black placeholder-black/50 outline-none">
+        <datalist id="beban-kategori-list">
+          <option value="Operasional">
+          <option value="Bahan">
+          <option value="Listrik">
+          <option value="Sewa Tempat">
+          <option value="Transport">
+          <option value="Maintenance">
+        </datalist>
+      </div>
+      <div class="flex flex-col gap-1.5">
+        <label class="text-[10px] font-bold text-black tracking-wider">NOMINAL (Rp)</label>
+        <input id="beban-nominal" type="number" min="0" placeholder="0" class="w-full bg-darkBg border-2 border-borderDark rounded-lg px-3 py-2.5 text-xs text-black placeholder-black/50 outline-none">
+      </div>
+      <div class="flex flex-col gap-1.5">
+        <label class="text-[10px] font-bold text-black tracking-wider">TANGGAL</label>
+        <input id="beban-tanggal" type="date" class="w-full bg-darkBg border-2 border-borderDark rounded-lg px-3 py-2.5 text-xs text-black outline-none">
+      </div>
+      <div class="flex flex-col gap-1.5">
+        <label class="text-[10px] font-bold text-black tracking-wider">KETERANGAN (opsional)</label>
+        <input id="beban-keterangan" type="text" placeholder="catatan tambahan..." class="w-full bg-darkBg border-2 border-borderDark rounded-lg px-3 py-2.5 text-xs text-black placeholder-black/50 outline-none">
+      </div>
+      <button id="btn-simpan-beban" onclick="simpanBeban()" class="w-full brand-gradient-bg text-black font-bold text-sm py-3 rounded-xl flex justify-center items-center gap-2 mt-1"><i class="fa-solid fa-floppy-disk"></i> SIMPAN BIAYA</button>
+    </div>
+  </div>
+</div>
+
+<div id="toast" style="display:none;position:fixed;bottom:24px;left:50%;transform:translateX(-50%);background:#1a1d24;color:#fff;padding:10px 18px;border-radius:12px;font-size:11px;font-weight:700;z-index:99999;max-width:90%;text-align:center;"></div>
+
+<div id="app-update-banner" style="display:none;position:fixed;top:0;left:0;right:0;z-index:99999;background:#ff8c00;color:#fff;padding:10px 16px;font-size:12px;font-weight:700;text-align:center;padding-top:calc(10px + env(safe-area-inset-top));">
+  Versi baru tersedia.
+  <button onclick="terapkanUpdateAplikasi()" style="margin-left:8px;background:#1a1d24;color:#fff;border:none;padding:4px 12px;border-radius:8px;font-size:11px;font-weight:700;">Update</button>
+</div>
+
+<script>
+  // ==================== KONEKSI DUA SUPABASE (Inventory & Payroll) - READ, kecuali tabel beban_operasional yang read+write ====================
+  const INV_URL = 'https://wyalxprcrrisowsqftgt.supabase.co';
+  const INV_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Ind5YWx4cHJjcnJpc293c3FmdGd0Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODEzNDg2MDcsImV4cCI6MjA5NjkyNDYwN30.yA3g5bydgYbcrp1KOvYf0G7JXJHmbjhoCw928A0TzKc';
+  const PAY_URL = 'https://jziegbpuudswljwasctn.supabase.co';
+  const PAY_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imp6aWVnYnB1dWRzd2xqd2FzY3RuIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODIyMTMwNTQsImV4cCI6MjA5Nzc4OTA1NH0.ywgjRyZv3UxtYgbvVvoLr_Hf02u5wW8yP2v054WD98s';
+
+  const sbInv = supabase.createClient(INV_URL, INV_KEY);
+  const sbPay = supabase.createClient(PAY_URL, PAY_KEY);
+
+  // Supabase membatasi hasil query ke maksimal 1000 baris per request kalau tidak
+  // di-paginate — fungsi ini mengambil semua baris dengan mengulang per 1000 baris,
+  // diurutkan berdasarkan 'id' ASC supaya paginasi stabil (sama seperti fetchAllRows
+  // di Inventory).
+  async function fetchAllRows(client, table, selectStr = '*') {
+    const PAGE = 1000;
+    let from = 0;
+    let all = [];
+    while (true) {
+      const { data, error } = await client
+        .from(table)
+        .select(selectStr)
+        .order('id', { ascending: true })
+        .range(from, from + PAGE - 1);
+      if (error) { console.warn('fetchAllRows gagal:', table, error.message); break; }
+      all = all.concat(data || []);
+      if (!data || data.length < PAGE) break;
+      from += PAGE;
+    }
+    return all;
+  }
+
+  function showToast(msg) {
+    const t = document.getElementById('toast');
+    t.textContent = msg;
+    t.style.display = 'block';
+    clearTimeout(window._toastTimer);
+    window._toastTimer = setTimeout(() => { t.style.display = 'none'; }, 2600);
+  }
+
+  // ==================== PIN LOGIN (pakai pin_login yang sama dgn Inventory) ====================
+  let _pinVal = '';
+  function pinFlash(el) { el.classList.add('pin-pressed'); setTimeout(() => el.classList.remove('pin-pressed'), 90); }
+  function updatePinDots() {
+    for (let i = 0; i < 4; i++) {
+      const dot = document.getElementById('pld-' + i);
+      if (i < _pinVal.length) { dot.style.background = 'var(--brand-main)'; dot.style.borderColor = '#FFB144'; }
+      else { dot.style.background = 'transparent'; dot.style.borderColor = '#4b5563'; }
+    }
+  }
+  async function pinLoginInput(d) {
+    if (_pinVal.length >= 4) return;
+    _pinVal += d;
+    updatePinDots();
+    document.getElementById('pin-login-error').textContent = '';
+    if (_pinVal.length === 4) {
+      try {
+        const { data } = await sbInv.from('pengaturan').select('value').eq('key', 'pin_login').single();
+        const stored = data ? data.value : null;
+        if (!stored) {
+          document.getElementById('pin-login-error').textContent = 'PIN belum diset. Buka Aplikasi Inventory dulu.';
+          _pinVal = ''; updatePinDots();
+          return;
+        }
+        if (_pinVal === stored) {
+          document.getElementById('pin-login-screen').style.display = 'none';
+          masukApp();
+        } else {
+          document.getElementById('pin-login-error').textContent = '❌ PIN salah, coba lagi';
+          setTimeout(() => { _pinVal = ''; updatePinDots(); document.getElementById('pin-login-error').textContent = ''; }, 900);
+        }
+      } catch (e) {
+        document.getElementById('pin-login-error').textContent = 'Gagal cek PIN: ' + e.message;
+        _pinVal = ''; updatePinDots();
+      }
+    }
+  }
+  function pinLoginHapus() { if (_pinVal.length > 0) { _pinVal = _pinVal.slice(0, -1); updatePinDots(); } }
+
+  async function initPin() {
+    document.getElementById('loading-overlay').style.display = 'none';
+    document.getElementById('pin-login-screen').style.display = 'flex';
+    updatePinDots();
+  }
+
+  function masukApp() {
+    document.getElementById('app-content').classList.remove('hidden');
+    document.getElementById('app-content').classList.add('flex');
+    setFilterQuick('bulan-ini');
+  }
+
+  // ==================== UTIL TANGGAL ====================
+  const BULAN_ID = { jan:0,feb:1,mar:2,apr:3,mei:4,jun:5,jul:6,agu:7,sep:8,okt:9,nov:10,des:11 };
+  function parseTanggalID(str) {
+    if (!str) return null;
+    const parts = str.trim().toLowerCase().split(' ');
+    if (parts.length < 3) return null;
+    const d = parseInt(parts[0]);
+    const m = BULAN_ID[parts[1].substring(0,3)];
+    const y = parseInt(parts[2]);
+    if (isNaN(d) || m === undefined || isNaN(y)) return null;
+    return new Date(y, m, d, 12, 0, 0);
+  }
+  function fmtRp(n) { return 'Rp ' + Math.round(n||0).toLocaleString('id-ID'); }
+  function _awalMingguIni(ref) {
+    const d = new Date(ref); const day = d.getDay();
+    const diff = (day === 0 ? -6 : 1 - day);
+    d.setDate(d.getDate() + diff); d.setHours(0,0,0,0);
+    return d;
+  }
+  function _fmtInput(d) { return d.getFullYear() + '-' + String(d.getMonth()+1).padStart(2,'0') + '-' + String(d.getDate()).padStart(2,'0'); }
+
+  // ==================== TAB SWITCH ====================
+  function switchLkTab(which) {
+    document.getElementById('lk-tab-ringkasan').classList.toggle('active', which === 'ringkasan');
+    document.getElementById('lk-tab-beban').classList.toggle('active', which === 'beban');
+    document.getElementById('lk-tab-btn-ringkasan').classList.toggle('active', which === 'ringkasan');
+    document.getElementById('lk-tab-btn-beban').classList.toggle('active', which === 'beban');
+    if (which === 'beban') window.scrollTo({ top: 0, behavior: 'instant' });
+  }
+
+  // ==================== FILTER PERIODE ====================
+  function _setQuickActive(which) {
+    const map = { 'minggu-ini':'lk-quick-minggu-ini', 'minggu-lalu':'lk-quick-minggu-lalu', 'bulan-ini':'lk-quick-bulan-ini', 'semua':'lk-quick-semua' };
+    Object.values(map).forEach(id => {
+      const el = document.getElementById(id);
+      if (!el) return;
+      el.style.background = ''; if (!el.classList.contains('bg-darkBg')) el.classList.add('bg-darkBg');
+    });
+    const activeId = map[which];
+    if (activeId) { const el = document.getElementById(activeId); if (el) { el.style.background = 'linear-gradient(90deg,#ff8c00,#ffb347)'; el.classList.remove('bg-darkBg'); } }
+  }
+  function setFilterQuick(which) {
+    const now = new Date();
+    if (which === 'minggu-ini') {
+      const awal = _awalMingguIni(now); const akhir = new Date(awal); akhir.setDate(akhir.getDate()+6);
+      document.getElementById('lk-filter-dari').value = _fmtInput(awal);
+      document.getElementById('lk-filter-sampai').value = _fmtInput(akhir);
+    } else if (which === 'minggu-lalu') {
+      const awalMingguIni = _awalMingguIni(now);
+      const akhir = new Date(awalMingguIni); akhir.setDate(akhir.getDate()-1);
+      const awal = new Date(awalMingguIni); awal.setDate(awal.getDate()-7);
+      document.getElementById('lk-filter-dari').value = _fmtInput(awal);
+      document.getElementById('lk-filter-sampai').value = _fmtInput(akhir);
+    } else if (which === 'bulan-ini') {
+      const awal = new Date(now.getFullYear(), now.getMonth(), 1);
+      const akhir = new Date(now.getFullYear(), now.getMonth()+1, 0);
+      document.getElementById('lk-filter-dari').value = _fmtInput(awal);
+      document.getElementById('lk-filter-sampai').value = _fmtInput(akhir);
+    } else if (which === 'semua') {
+      document.getElementById('lk-filter-dari').value = '';
+      document.getElementById('lk-filter-sampai').value = '';
+    }
+    _setQuickActive(which);
+    muatSemuaLaporan();
+  }
+  function applyFilterManual() {
+    const dari = document.getElementById('lk-filter-dari').value;
+    const sampai = document.getElementById('lk-filter-sampai').value;
+    if (dari && sampai && dari > sampai) { showToast('⚠️ Tanggal awal tidak boleh lebih besar dari tanggal akhir!'); return; }
+    _setQuickActive('manual');
+    muatSemuaLaporan();
+  }
+  function getFilterISO() {
+    return { dariISO: document.getElementById('lk-filter-dari').value || '', sampaiISO: document.getElementById('lk-filter-sampai').value || '' };
+  }
+  function _updatePeriodeLabel() {
+    const { dariISO, sampaiISO } = getFilterISO();
+    const label = document.getElementById('lk-periode-label');
+    const fmt = (iso) => iso ? new Date(iso + 'T00:00:00').toLocaleDateString('id-ID', {day:'2-digit',month:'short',year:'numeric'}) : '';
+    if (!dariISO && !sampaiISO) label.textContent = 'SEMUA DATA';
+    else if (dariISO && sampaiISO) label.textContent = fmt(dariISO) + ' — ' + fmt(sampaiISO);
+    else if (dariISO) label.textContent = 'SEJAK ' + fmt(dariISO);
+    else label.textContent = 'SAMPAI ' + fmt(sampaiISO);
+  }
+
+  // ==================== DATA CACHE ====================
+  let _cacheOmset = 0, _cacheModal = 0, _cacheLabaKotor = 0;
+  let _cachePayroll = 0;
+  let _cacheBebanManual = [];
+  let _bebanTableMissing = false;
+
+  // ==================== LABA KOTOR (dari Inventory) ====================
+  // Cari harga modal model saat ini (dipakai sebagai fallback untuk transaksi lama
+  // yang belum punya snapshot harga_modal, misalnya transaksi sebelum fitur ini ada).
+  // Sama seperti cariHargaModalModel() di Inventory.
+  function _cariHargaModalModel(modelMap, brandNama, modelNama) {
+    const m = modelMap[(brandNama || '') + ' || ' + (modelNama || '')];
+    return m ? (m.hargaModal || 0) : 0;
+  }
+
+  async function muatLabaKotor() {
+    const { dariISO, sampaiISO } = getFilterISO();
+    const dari = dariISO ? new Date(dariISO + 'T00:00:00') : null;
+    const sampai = sampaiISO ? new Date(sampaiISO + 'T23:59:59') : null;
+
+    const [trxRows, itemRows, modelRows] = await Promise.all([
+      fetchAllRows(sbInv, 'transaksi'),
+      fetchAllRows(sbInv, 'transaksi_item'),
+      fetchAllRows(sbInv, 'model', '*, brand:brand_id(nama)'),
+    ]);
+    const itemMap = {};
+    itemRows.forEach(i => { if (!itemMap[i.transaksi_id]) itemMap[i.transaksi_id] = []; itemMap[i.transaksi_id].push(i); });
+
+    const modelMap = {};
+    modelRows.forEach(m => {
+      const brandNama = m.brand?.nama || m.brand_nama || '';
+      modelMap[brandNama + ' || ' + m.nama] = { hargaModal: m.harga_modal || 0 };
+    });
+
+    let totalOmset = 0, totalModal = 0;
+    trxRows.forEach(t => {
+      const tgl = parseTanggalID(t.tanggal);
+      if (tgl) { if (dari && tgl < dari) return; if (sampai && tgl > sampai) return; }
+      const items = itemMap[t.id] || [];
+      const totalQty = items.reduce((s, i) => s + (i.qty || 0), 0);
+      const hargaJual = t.harga || 0;
+      // Pakai snapshot harga modal di transaksi kalau ada; kalau tidak (data lama),
+      // fallback ke harga modal model saat ini di Master.
+      const hargaModal = (t.harga_modal !== undefined && t.harga_modal !== null && t.harga_modal > 0)
+        ? t.harga_modal
+        : _cariHargaModalModel(modelMap, t.brand, t.model);
+      totalOmset += totalQty * hargaJual;
+      totalModal += totalQty * hargaModal;
+    });
+
+    _cacheOmset = totalOmset; _cacheModal = totalModal; _cacheLabaKotor = totalOmset - totalModal;
+  }
+
+  // ==================== PAYROLL OTOMATIS (dari Payroll App) ====================
+  async function muatPayroll() {
+    const icon = document.getElementById('lk-payroll-refresh-icon');
+    if (icon) icon.classList.add('fa-spin');
+    document.getElementById('lk-payroll-status').textContent = 'Menarik data...';
+    try {
+      const { dariISO, sampaiISO } = getFilterISO();
+      const inRange = (iso) => {
+        if (!iso) return false;
+        if (dariISO && iso < dariISO) return false;
+        if (sampaiISO && iso > sampaiISO) return false;
+        return true;
+      };
+      const [inputRes, tambahanRes, bayarRes] = await Promise.all([
+        sbPay.from('payroll_input').select('id, data'),
+        sbPay.from('tambahan').select('id, data'),
+        sbPay.from('payroll_bayar').select('id, data'),
+      ]);
+      let totalKotor = 0, totalTambahan = 0, totalPotongan = 0;
+      (inputRes.data || []).forEach(r => { const d = r.data || {}; if (inRange((d.tanggalISO||'').slice(0,10))) totalKotor += (d.jumlah || 0); });
+      (tambahanRes.data || []).forEach(r => { const d = r.data || {}; if (inRange((d.tanggalISO||'').slice(0,10))) totalTambahan += (d.total || 0); });
+      (bayarRes.data || []).forEach(r => { const d = r.data || {}; if (!d.luarGaji && inRange((d.tanggalISO||'').slice(0,10))) totalPotongan += (d.bayar || 0); });
+
+      _cachePayroll = totalKotor + totalTambahan - totalPotongan;
+      document.getElementById('lk-payroll-status').textContent = 'Ditarik dari Aplikasi Payroll';
+    } catch (e) {
+      _cachePayroll = 0;
+      document.getElementById('lk-payroll-status').textContent = '⚠ Gagal ambil data payroll: ' + e.message;
+    }
+    if (icon) icon.classList.remove('fa-spin');
+    renderSemua();
+  }
+
+  // ==================== BEBAN MANUAL (tabel baru di Inventory) ====================
+  async function muatBebanManual() {
+    const { dariISO, sampaiISO } = getFilterISO();
+    try {
+      let q = sbInv.from('beban_operasional').select('*').order('tanggal', { ascending: false });
+      const { data, error } = await q;
+      if (error) throw error;
+      _bebanTableMissing = false;
+      _cacheBebanManual = (data || []).filter(r => {
+        const iso = (r.tanggal || '').slice(0, 10);
+        if (dariISO && iso < dariISO) return false;
+        if (sampaiISO && iso > sampaiISO) return false;
+        return true;
+      });
+    } catch (e) {
+      _bebanTableMissing = true;
+      _cacheBebanManual = [];
+    }
+    renderSemua();
+  }
+
+  async function muatSemuaLaporan() {
+    _updatePeriodeLabel();
+    document.getElementById('loading-overlay').style.display = 'flex';
+    await Promise.all([muatLabaKotor(), muatPayroll(), muatBebanManual()]);
+    document.getElementById('loading-overlay').style.display = 'none';
+    renderSemua();
+  }
+
+  // ==================== RENDER ====================
+  function renderSemua() {
+    document.getElementById('lk-total-omset').textContent = fmtRp(_cacheOmset);
+    document.getElementById('lk-total-modal').textContent = fmtRp(_cacheModal);
+    document.getElementById('lk-total-laba-kotor').textContent = fmtRp(_cacheLabaKotor);
+    const marginKotor = _cacheOmset > 0 ? (_cacheLabaKotor / _cacheOmset * 100) : 0;
+    document.getElementById('lk-margin-kotor').textContent = 'Margin: ' + marginKotor.toFixed(1) + '%';
+
+    document.getElementById('lk-payroll-total').textContent = fmtRp(_cachePayroll);
+
+    const totalBebanManual = _cacheBebanManual.reduce((s, r) => s + (r.nominal || 0), 0);
+    const totalBeban = _cachePayroll + totalBebanManual;
+    document.getElementById('lk-total-beban').textContent = fmtRp(totalBeban);
+
+    const labaBersih = _cacheLabaKotor - totalBeban;
+    document.getElementById('lk-total-laba-bersih').textContent = fmtRp(labaBersih);
+    const marginBersih = _cacheOmset > 0 ? (labaBersih / _cacheOmset * 100) : 0;
+    document.getElementById('lk-margin-bersih').textContent = 'Margin: ' + marginBersih.toFixed(1) + '%';
+    const card = document.getElementById('lk-laba-bersih-card');
+    if (labaBersih < 0) card.style.background = 'linear-gradient(135deg,#dc2626,#991b1b)';
+    else card.style.background = 'linear-gradient(135deg,#16a34a,#15803d)';
+
+    const badge = document.getElementById('lk-tab-badge-beban');
+    if (badge) badge.textContent = _cacheBebanManual.length;
+
+    const listEl = document.getElementById('lk-beban-list');
+    const banner = document.getElementById('lk-beban-missing-banner');
+    if (_bebanTableMissing) {
+      banner.classList.remove('hidden');
+      listEl.innerHTML = '';
+    } else {
+      banner.classList.add('hidden');
+      if (_cacheBebanManual.length === 0) {
+        listEl.innerHTML = '<div class="text-center text-black text-[11px] py-6 flex flex-col items-center gap-2"><i class="fa-solid fa-inbox text-2xl opacity-40"></i>Belum ada biaya manual di periode ini.</div>';
+      } else {
+        listEl.innerHTML = _cacheBebanManual.map(r => {
+          const tglDisplay = r.tanggal ? new Date(r.tanggal + 'T00:00:00').toLocaleDateString('id-ID', {day:'2-digit',month:'short',year:'numeric'}) : '-';
+          return `<div class="flex items-center justify-between px-3 py-2.5 border-b-2 border-borderDark last:border-0">
+            <div class="min-w-0 flex-1">
+              <div class="text-[10.5px] font-bold text-black truncate">${escapeHtml(r.kategori)}</div>
+              <div class="text-[8.5px] text-black/60">${tglDisplay}${r.keterangan ? ' • ' + escapeHtml(r.keterangan) : ''}</div>
+            </div>
+            <div class="text-right flex-shrink-0 ml-2 flex items-center gap-2">
+              <div class="text-[11px] font-black text-red-600">Rp ${(r.nominal||0).toLocaleString('id-ID')}</div>
+              <button onclick="hapusBeban(${r.id})" class="w-7 h-7 rounded-lg bg-red-500/10 hover:bg-red-500/20 flex items-center justify-center text-red-600 text-[10px]"><i class="fa-solid fa-trash"></i></button>
+            </div>
+          </div>`;
+        }).join('');
+      }
+    }
+  }
+  function escapeHtml(s) { return String(s||'').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
+
+  // ==================== TAMBAH / HAPUS BEBAN ====================
+  function bukaTambahBeban() {
+    document.getElementById('beban-kategori').value = '';
+    document.getElementById('beban-nominal').value = '';
+    document.getElementById('beban-keterangan').value = '';
+    document.getElementById('beban-tanggal').value = _fmtInput(new Date());
+    document.getElementById('sheet-tambah-beban').classList.add('active');
+  }
+  function tutupTambahBeban() { document.getElementById('sheet-tambah-beban').classList.remove('active'); }
+
+  async function simpanBeban() {
+    const kategori = document.getElementById('beban-kategori').value.trim();
+    const nominal = parseInt(document.getElementById('beban-nominal').value) || 0;
+    const tanggal = document.getElementById('beban-tanggal').value;
+    const keterangan = document.getElementById('beban-keterangan').value.trim();
+    if (!kategori) { showToast('Isi jenis biaya dulu!'); return; }
+    if (nominal <= 0) { showToast('Nominal harus lebih dari 0!'); return; }
+    if (!tanggal) { showToast('Pilih tanggal dulu!'); return; }
+
+    const btn = document.getElementById('btn-simpan-beban');
+    btn.disabled = true; btn.innerHTML = '<i class="fa-solid fa-circle-notch fa-spin"></i> MENYIMPAN...';
+    try {
+      const { error } = await sbInv.from('beban_operasional').insert({ kategori, nominal, tanggal, keterangan });
+      if (error) throw error;
+      showToast('✅ Biaya tersimpan!');
+      tutupTambahBeban();
+      await muatBebanManual();
+    } catch (e) {
+      showToast('❌ Gagal: ' + e.message);
+    }
+    btn.disabled = false; btn.innerHTML = '<i class="fa-solid fa-floppy-disk"></i> SIMPAN BIAYA';
+  }
+
+  async function hapusBeban(id) {
+    if (!confirm('Hapus biaya ini?')) return;
+    try {
+      const { error } = await sbInv.from('beban_operasional').delete().eq('id', id);
+      if (error) throw error;
+      showToast('🗑️ Biaya dihapus');
+      await muatBebanManual();
+    } catch (e) { showToast('❌ Gagal hapus: ' + e.message); }
+  }
+
+  // ==================== INIT ====================
+  initPin();
+</script>
+</body>
+</html>
