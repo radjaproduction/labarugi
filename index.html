@@ -224,16 +224,8 @@
   <div id="lk-tab-ringkasan" class="lk-tab-content active">
 
   <!-- SUMMARY LABA KOTOR -->
-  <div class="grid grid-cols-2 gap-2">
-    <div class="bg-cardBg rounded-xl p-3 border-2 border-borderDark flex flex-col gap-1">
-      <div class="text-[8px] font-black text-black tracking-wider flex items-center gap-1"><i class="fa-solid fa-cart-shopping text-[9px]"></i> TOTAL OMSET</div>
-      <div id="lk-total-omset" class="text-[15px] font-black text-black">Rp 0</div>
-    </div>
-    <div class="bg-cardBg rounded-xl p-3 border-2 border-borderDark flex flex-col gap-1">
-      <div class="text-[8px] font-black text-black tracking-wider flex items-center gap-1"><i class="fa-solid fa-box text-[9px]"></i> TOTAL MODAL (HPP)</div>
-      <div id="lk-total-modal" class="text-[15px] font-black text-black">Rp 0</div>
-    </div>
-  </div>
+  <div id="lk-total-omset" class="hidden">Rp 0</div>
+  <div id="lk-total-modal" class="hidden">Rp 0</div>
   <div class="rounded-xl p-4 border-2 flex flex-col gap-1" style="background:linear-gradient(135deg,#16a34a,#15803d);border-color:#166534;">
     <div class="text-[9px] font-black text-white/90 tracking-wider flex items-center gap-1"><i class="fa-solid fa-sack-dollar text-[10px]"></i> LABA KOTOR</div>
     <div id="lk-total-laba-kotor" class="text-[24px] font-black text-white leading-none">Rp 0</div>
@@ -245,10 +237,6 @@
     <div class="text-[10px] font-black text-white/90 tracking-wider flex items-center gap-1"><i class="fa-solid fa-vault text-[11px]"></i> LABA BERSIH</div>
     <div id="lk-total-laba-bersih" class="text-[28px] font-black text-white leading-none">Rp 0</div>
     <div id="lk-margin-bersih" class="text-[10px] font-bold text-white/80 mt-1">Margin: 0%</div>
-  </div>
-
-  <div class="bg-yellow-500/10 border-2 border-yellow-500/25 rounded-lg px-3 py-2.5 text-[9px] text-black leading-relaxed">
-    <i class="fa-solid fa-circle-info mr-1"></i> Laba Bersih = Laba Kotor − (Payroll otomatis + semua biaya manual). Payroll ditarik otomatis dari aplikasi Payroll untuk periode yang sama; biaya lain diinput manual di sini.
   </div>
 
   </div>
@@ -322,21 +310,23 @@ END $$;</textarea>
       <button onclick="tutupTambahBeban()" style="background:none;border:none;font-size:20px;cursor:pointer;">&times;</button>
     </div>
     <div class="flex flex-col gap-3">
-      <div class="flex flex-col gap-1.5">
+      <div class="flex flex-col gap-1.5 relative">
         <label class="text-[10px] font-bold text-black tracking-wider">JENIS BIAYA</label>
-        <input id="beban-kategori" list="beban-kategori-list" type="text" placeholder="mis. Operasional, Bahan, Listrik, Sewa..." class="w-full bg-darkBg border-2 border-borderDark rounded-lg px-3 py-2.5 text-xs text-black placeholder-black/50 outline-none">
-        <datalist id="beban-kategori-list">
-          <option value="Operasional">
-          <option value="Bahan">
-          <option value="Listrik">
-          <option value="Sewa Tempat">
-          <option value="Transport">
-          <option value="Maintenance">
-        </datalist>
+        <input type="hidden" id="beban-kategori">
+        <button type="button" id="beban-kategori-trigger" onclick="toggleKategoriDropdown()" class="w-full bg-darkBg border-2 border-borderDark rounded-lg px-3 py-2.5 text-xs text-left outline-none flex items-center justify-between gap-2">
+          <span id="beban-kategori-label" class="text-black/50 truncate">Pilih jenis biaya...</span>
+          <i class="fa-solid fa-chevron-down text-[9px] text-black/60 flex-shrink-0"></i>
+        </button>
+        <div id="beban-kategori-dropdown" class="hidden absolute left-0 right-0 top-full mt-1 z-50 bg-white border-2 border-borderDark rounded-lg shadow-[0_6px_18px_rgba(0,0,0,0.25)] overflow-hidden">
+          <div class="p-2 border-b-2 border-borderDark/40">
+            <input type="text" id="beban-kategori-search" oninput="renderKategoriDropdown()" placeholder="Cari atau tambah kategori baru..." class="w-full bg-darkBg rounded-md px-2.5 py-2 text-xs text-black placeholder-black/50 outline-none border-2 border-borderDark/50">
+          </div>
+          <div id="beban-kategori-options" class="max-h-[180px] overflow-y-auto"></div>
+        </div>
       </div>
       <div class="flex flex-col gap-1.5">
         <label class="text-[10px] font-bold text-black tracking-wider">NOMINAL (Rp)</label>
-        <input id="beban-nominal" type="number" min="0" placeholder="0" class="w-full bg-darkBg border-2 border-borderDark rounded-lg px-3 py-2.5 text-xs text-black placeholder-black/50 outline-none">
+        <input id="beban-nominal" type="text" inputmode="numeric" placeholder="0" oninput="formatRupiahInput(this)" class="w-full bg-darkBg border-2 border-borderDark rounded-lg px-3 py-2.5 text-xs text-black placeholder-black/50 outline-none">
       </div>
       <div class="flex flex-col gap-1.5">
         <label class="text-[10px] font-bold text-black tracking-wider">TANGGAL</label>
@@ -446,7 +436,7 @@ END $$;</textarea>
   function masukApp() {
     document.getElementById('app-content').classList.remove('hidden');
     document.getElementById('app-content').classList.add('flex');
-    setFilterQuick('bulan-ini');
+    setFilterQuick('minggu-ini');
   }
 
   // ==================== UTIL TANGGAL ====================
@@ -462,6 +452,14 @@ END $$;</textarea>
     return new Date(y, m, d, 12, 0, 0);
   }
   function fmtRp(n) { return 'Rp ' + Math.round(n||0).toLocaleString('id-ID'); }
+  function formatRupiahInput(el) {
+    const raw = el.value.replace(/\D/g, '');
+    el.value = raw ? parseInt(raw, 10).toLocaleString('id-ID') : '';
+  }
+  function parseRupiahInput(el) {
+    if (!el) return 0;
+    return parseInt(String(el.value || '').replace(/\D/g, ''), 10) || 0;
+  }
   function _awalMingguIni(ref) {
     const d = new Date(ref); const day = d.getDay();
     const diff = (day === 0 ? -6 : 1 - day);
@@ -702,9 +700,105 @@ END $$;</textarea>
   }
   function escapeHtml(s) { return String(s||'').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
 
+  // ==================== MASTER DATA: JENIS BIAYA (dropdown custom) ====================
+  const KATEGORI_BIAYA_KEY = 'lk_master_kategori_biaya';
+  const KATEGORI_BIAYA_DEFAULT = ['Operasional', 'Bahan', 'Listrik', 'Sewa Tempat', 'Transport', 'Maintenance'];
+
+  function getMasterKategoriBiaya() {
+    try {
+      const saved = JSON.parse(localStorage.getItem(KATEGORI_BIAYA_KEY));
+      if (Array.isArray(saved) && saved.length) return saved;
+    } catch (e) {}
+    return KATEGORI_BIAYA_DEFAULT.slice();
+  }
+  function simpanMasterKategoriBiaya(list) {
+    localStorage.setItem(KATEGORI_BIAYA_KEY, JSON.stringify(list));
+  }
+
+  function toggleKategoriDropdown(forceOpen) {
+    const dd = document.getElementById('beban-kategori-dropdown');
+    const shouldOpen = forceOpen !== undefined ? forceOpen : dd.classList.contains('hidden');
+    if (shouldOpen) {
+      dd.classList.remove('hidden');
+      const search = document.getElementById('beban-kategori-search');
+      search.value = '';
+      renderKategoriDropdown();
+      setTimeout(() => search.focus(), 30);
+    } else {
+      dd.classList.add('hidden');
+    }
+  }
+
+  function renderKategoriDropdown() {
+    const q = document.getElementById('beban-kategori-search').value.trim().toLowerCase();
+    const list = getMasterKategoriBiaya();
+    const filtered = q ? list.filter(k => k.toLowerCase().includes(q)) : list;
+    const opsEl = document.getElementById('beban-kategori-options');
+    let html = '';
+    filtered.forEach(nama => {
+      html += `<div class="flex items-center justify-between px-3 py-2.5 text-xs font-bold text-black hover:bg-darkBg cursor-pointer border-b border-borderDark/20 last:border-b-0" onclick="pilihKategoriBiaya('${escapeHtml(nama).replace(/'/g, "\\'")}')">
+        <span class="truncate">${escapeHtml(nama)}</span>
+        <i class="fa-solid fa-trash-can text-[10px] text-black/30 hover:text-red-500 flex-shrink-0 ml-2 px-1" onclick="event.stopPropagation();hapusMasterKategoriBiaya('${escapeHtml(nama).replace(/'/g, "\\'")}')"></i>
+      </div>`;
+    });
+    if (q && !list.some(k => k.toLowerCase() === q)) {
+      html += `<div class="flex items-center gap-2 px-3 py-2.5 text-xs font-black brand-text hover:bg-darkBg cursor-pointer" onclick="tambahKategoriBiayaBaru()">
+        <i class="fa-solid fa-plus"></i> Tambah "${escapeHtml(document.getElementById('beban-kategori-search').value.trim())}"
+      </div>`;
+    }
+    if (!html) html = '<div class="px-3 py-3 text-[11px] text-black/50 text-center">Kategori tidak ditemukan.</div>';
+    opsEl.innerHTML = html;
+  }
+
+  function pilihKategoriBiaya(nama) {
+    document.getElementById('beban-kategori').value = nama;
+    const label = document.getElementById('beban-kategori-label');
+    label.textContent = nama;
+    label.classList.remove('text-black/50');
+    toggleKategoriDropdown(false);
+  }
+
+  function tambahKategoriBiayaBaru() {
+    const search = document.getElementById('beban-kategori-search');
+    const val = search.value.trim();
+    if (!val) return;
+    const list = getMasterKategoriBiaya();
+    if (!list.some(k => k.toLowerCase() === val.toLowerCase())) {
+      list.push(val);
+      simpanMasterKategoriBiaya(list);
+    }
+    pilihKategoriBiaya(val);
+  }
+
+  function hapusMasterKategoriBiaya(nama) {
+    if (!confirm('Hapus "' + nama + '" dari master kategori biaya?')) return;
+    const list = getMasterKategoriBiaya().filter(k => k !== nama);
+    simpanMasterKategoriBiaya(list);
+    if (document.getElementById('beban-kategori').value === nama) {
+      document.getElementById('beban-kategori').value = '';
+      const label = document.getElementById('beban-kategori-label');
+      label.textContent = 'Pilih jenis biaya...';
+      label.classList.add('text-black/50');
+    }
+    renderKategoriDropdown();
+  }
+
+  document.addEventListener('click', function(e) {
+    const wrap = document.getElementById('beban-kategori-dropdown');
+    const trigger = document.getElementById('beban-kategori-trigger');
+    if (!wrap || wrap.classList.contains('hidden')) return;
+    if (!wrap.contains(e.target) && e.target !== trigger && !trigger.contains(e.target)) {
+      toggleKategoriDropdown(false);
+    }
+  });
+
   // ==================== TAMBAH / HAPUS BEBAN ====================
   function bukaTambahBeban() {
     document.getElementById('beban-kategori').value = '';
+    const kategoriLabel = document.getElementById('beban-kategori-label');
+    kategoriLabel.textContent = 'Pilih jenis biaya...';
+    kategoriLabel.classList.add('text-black/50');
+    document.getElementById('beban-kategori-dropdown').classList.add('hidden');
     document.getElementById('beban-nominal').value = '';
     document.getElementById('beban-keterangan').value = '';
     document.getElementById('beban-tanggal').value = _fmtInput(new Date());
@@ -714,7 +808,7 @@ END $$;</textarea>
 
   async function simpanBeban() {
     const kategori = document.getElementById('beban-kategori').value.trim();
-    const nominal = parseInt(document.getElementById('beban-nominal').value) || 0;
+    const nominal = parseRupiahInput(document.getElementById('beban-nominal'));
     const tanggal = document.getElementById('beban-tanggal').value;
     const keterangan = document.getElementById('beban-keterangan').value.trim();
     if (!kategori) { showToast('Isi jenis biaya dulu!'); return; }
