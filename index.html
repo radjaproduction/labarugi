@@ -137,6 +137,101 @@
   .lk-tab-content.active { display: flex; }
   @keyframes lkTabFade { from { opacity: 0; transform: translateY(4px); } to { opacity: 1; transform: translateY(0); } }
   .lk-tab-content.active { animation: lkTabFade .18s ease; }
+
+  /* ==================== INTERAKTIVITAS TAMBAHAN ==================== */
+
+  /* Ripple efek untuk tombol */
+  .ripple-btn { position: relative; overflow: hidden; }
+  .ripple-ink { position: absolute; border-radius: 50%; transform: scale(0); animation: rippleAnim .55s ease-out; background: rgba(255,255,255,0.55); pointer-events: none; }
+  @keyframes rippleAnim { to { transform: scale(2.6); opacity: 0; } }
+
+  /* Kartu bisa ditekan */
+  .tap-card { transition: transform .15s cubic-bezier(.34,1.56,.64,1), box-shadow .15s ease; will-change: transform; }
+  .tap-card:active { transform: scale(0.975); }
+
+  /* Hero: kilau halus bergerak */
+  .hero-shine { position: absolute; inset: 0; overflow: hidden; pointer-events: none; }
+  .hero-shine::after {
+    content: ''; position: absolute; top: -50%; left: -60%; width: 40%; height: 200%;
+    background: linear-gradient(75deg, transparent 0%, rgba(255,255,255,0.35) 50%, transparent 100%);
+    animation: heroShineMove 4.5s ease-in-out infinite;
+  }
+  @keyframes heroShineMove { 0% { left: -60%; } 45%,100% { left: 130%; } }
+  .hero-icon-float { animation: heroIconFloat 2.6s ease-in-out infinite; }
+  @keyframes heroIconFloat { 0%,100% { transform: translateY(0) rotate(0deg); } 50% { transform: translateY(-3px) rotate(-4deg); } }
+
+  /* Indikator tab yang meluncur */
+  .lk-tab-bar { position: relative; }
+  .lk-tab-indicator {
+    position: absolute; top: 4px; bottom: 4px; left: 4px;
+    width: calc(50% - 6px);
+    background: var(--brand-gradient); border-radius: 10px;
+    box-shadow: 0 2px 8px rgba(255,140,0,0.35);
+    transition: transform .28s cubic-bezier(.65,0,.35,1);
+    z-index: 0;
+  }
+  .lk-tab-btn { position: relative; z-index: 1; transition: color .15s ease, transform .12s ease; }
+  .lk-tab-btn:active { transform: scale(0.96); }
+  .lk-tab-btn.active { background: transparent; box-shadow: none; }
+
+  /* Kartu ringkasan (laba kotor/bersih) */
+  .summary-card { position: relative; overflow: hidden; transition: background .4s ease, transform .18s ease; }
+  .summary-card:active { transform: scale(0.985); }
+  .summary-card .glow-orb { position: absolute; width: 90px; height: 90px; border-radius: 50%; background: rgba(255,255,255,0.14); top: -30px; right: -20px; filter: blur(2px); }
+  .summary-progress-track { width: 100%; height: 6px; border-radius: 999px; background: rgba(0,0,0,0.18); overflow: hidden; margin-top: 6px; }
+  .summary-progress-fill { height: 100%; border-radius: 999px; background: rgba(255,255,255,0.85); width: 0%; transition: width .7s cubic-bezier(.22,1,.36,1); }
+  .num-pulse { animation: numPulse .35s ease; }
+  @keyframes numPulse { 0% { transform: scale(1.06); opacity: .55; } 100% { transform: scale(1); opacity: 1; } }
+
+  /* Tombol filter cepat */
+  .lk-quick-btn { transition: transform .12s cubic-bezier(.34,1.56,.64,1), background .2s ease, box-shadow .2s ease; }
+  .lk-quick-btn:active { transform: scale(0.92); }
+  .lk-quick-btn.active-quick { box-shadow: 0 3px 10px rgba(255,140,0,0.4); }
+
+  /* List beban: hover/press + slide-in */
+  .beban-row { transition: background .15s ease, transform .12s ease; }
+  .beban-row:active { transform: scale(0.985); background: rgba(0,0,0,0.03); }
+  @keyframes rowSlideIn { from { opacity: 0; transform: translateX(10px); } to { opacity: 1; transform: translateX(0); } }
+  .beban-row-in { animation: rowSlideIn .28s ease backwards; }
+  .kat-chip { width: 30px; height: 30px; border-radius: 9px; display: flex; align-items: center; justify-content: center; font-size: 11px; flex-shrink: 0; }
+
+  /* FAB tambah biaya */
+  .fab-add { position: fixed; right: 18px; bottom: calc(22px + env(safe-area-inset-bottom)); z-index: 40; width: 54px; height: 54px; border-radius: 999px; display: flex; align-items: center; justify-content: center; box-shadow: 0 8px 20px rgba(255,140,0,0.5); transition: transform .15s cubic-bezier(.34,1.56,.64,1); animation: fabPop .5s cubic-bezier(.34,1.56,.64,1); }
+  .fab-add:active { transform: scale(0.86) rotate(90deg); }
+  @keyframes fabPop { from { transform: scale(0) rotate(-90deg); opacity: 0; } to { transform: scale(1) rotate(0deg); opacity: 1; } }
+
+  /* Bottom sheet: handle + spring */
+  .sheet-panel { transform: translateY(100%); transition: transform .32s cubic-bezier(.32,.72,0,1); }
+  .sheet-overlay.active .sheet-panel { transform: translateY(0); }
+  .sheet-overlay { transition: background .25s ease; }
+  .sheet-handle { width: 40px; height: 5px; border-radius: 999px; background: rgba(0,0,0,0.15); margin: 0 auto 10px; }
+
+  /* Dropdown kategori: entrance */
+  @keyframes ddDrop { from { opacity: 0; transform: translateY(-6px) scale(.98); } to { opacity: 1; transform: translateY(0) scale(1); } }
+  #beban-kategori-dropdown:not(.hidden) { animation: ddDrop .16s ease; }
+  .kat-option { transition: background .12s ease, padding-left .12s ease; }
+  .kat-option:hover { padding-left: 16px; }
+
+  /* Toast */
+  #toast { transition: transform .3s cubic-bezier(.34,1.56,.64,1), opacity .3s ease; }
+
+  /* Skeleton shimmer */
+  .skel { position: relative; overflow: hidden; background: rgba(0,0,0,0.08); border-radius: 8px; }
+  .skel::after {
+    content: ''; position: absolute; inset: 0; transform: translateX(-100%);
+    background: linear-gradient(90deg, transparent, rgba(255,255,255,0.55), transparent);
+    animation: skelShimmer 1.3s infinite;
+  }
+  @keyframes skelShimmer { 100% { transform: translateX(100%); } }
+
+  /* Mini bar chart kategori */
+  .kat-bar-track { flex: 1; height: 8px; border-radius: 999px; background: rgba(0,0,0,0.08); overflow: hidden; }
+  .kat-bar-fill { height: 100%; border-radius: 999px; width: 0%; transition: width .6s cubic-bezier(.22,1,.36,1); }
+
+  /* Reduced motion */
+  @media (prefers-reduced-motion: reduce) {
+    * { animation-duration: 0.001ms !important; animation-iteration-count: 1 !important; transition-duration: 0.001ms !important; }
+  }
 </style>
 </head>
 <body class="no-scrollbar">
@@ -163,18 +258,18 @@
     </div>
     <div id="pin-login-error" class="text-red-500 text-[11px] font-bold text-center min-h-[18px]"></div>
     <div class="grid grid-cols-3 gap-3 w-full">
-      <button onclick="pinFlash(this);pinLoginInput('1')" class="pin-btn bg-cardBg border-2 border-borderDark rounded-2xl py-4 text-[#1a1d24] text-xl font-black">1</button>
-      <button onclick="pinFlash(this);pinLoginInput('2')" class="pin-btn bg-cardBg border-2 border-borderDark rounded-2xl py-4 text-[#1a1d24] text-xl font-black">2</button>
-      <button onclick="pinFlash(this);pinLoginInput('3')" class="pin-btn bg-cardBg border-2 border-borderDark rounded-2xl py-4 text-[#1a1d24] text-xl font-black">3</button>
-      <button onclick="pinFlash(this);pinLoginInput('4')" class="pin-btn bg-cardBg border-2 border-borderDark rounded-2xl py-4 text-[#1a1d24] text-xl font-black">4</button>
-      <button onclick="pinFlash(this);pinLoginInput('5')" class="pin-btn bg-cardBg border-2 border-borderDark rounded-2xl py-4 text-[#1a1d24] text-xl font-black">5</button>
-      <button onclick="pinFlash(this);pinLoginInput('6')" class="pin-btn bg-cardBg border-2 border-borderDark rounded-2xl py-4 text-[#1a1d24] text-xl font-black">6</button>
-      <button onclick="pinFlash(this);pinLoginInput('7')" class="pin-btn bg-cardBg border-2 border-borderDark rounded-2xl py-4 text-[#1a1d24] text-xl font-black">7</button>
-      <button onclick="pinFlash(this);pinLoginInput('8')" class="pin-btn bg-cardBg border-2 border-borderDark rounded-2xl py-4 text-[#1a1d24] text-xl font-black">8</button>
-      <button onclick="pinFlash(this);pinLoginInput('9')" class="pin-btn bg-cardBg border-2 border-borderDark rounded-2xl py-4 text-[#1a1d24] text-xl font-black">9</button>
+      <button onclick="pinFlash(this);pinLoginInput('1')" class="pin-btn ripple-btn bg-cardBg border-2 border-borderDark rounded-2xl py-4 text-[#1a1d24] text-xl font-black">1</button>
+      <button onclick="pinFlash(this);pinLoginInput('2')" class="pin-btn ripple-btn bg-cardBg border-2 border-borderDark rounded-2xl py-4 text-[#1a1d24] text-xl font-black">2</button>
+      <button onclick="pinFlash(this);pinLoginInput('3')" class="pin-btn ripple-btn bg-cardBg border-2 border-borderDark rounded-2xl py-4 text-[#1a1d24] text-xl font-black">3</button>
+      <button onclick="pinFlash(this);pinLoginInput('4')" class="pin-btn ripple-btn bg-cardBg border-2 border-borderDark rounded-2xl py-4 text-[#1a1d24] text-xl font-black">4</button>
+      <button onclick="pinFlash(this);pinLoginInput('5')" class="pin-btn ripple-btn bg-cardBg border-2 border-borderDark rounded-2xl py-4 text-[#1a1d24] text-xl font-black">5</button>
+      <button onclick="pinFlash(this);pinLoginInput('6')" class="pin-btn ripple-btn bg-cardBg border-2 border-borderDark rounded-2xl py-4 text-[#1a1d24] text-xl font-black">6</button>
+      <button onclick="pinFlash(this);pinLoginInput('7')" class="pin-btn ripple-btn bg-cardBg border-2 border-borderDark rounded-2xl py-4 text-[#1a1d24] text-xl font-black">7</button>
+      <button onclick="pinFlash(this);pinLoginInput('8')" class="pin-btn ripple-btn bg-cardBg border-2 border-borderDark rounded-2xl py-4 text-[#1a1d24] text-xl font-black">8</button>
+      <button onclick="pinFlash(this);pinLoginInput('9')" class="pin-btn ripple-btn bg-cardBg border-2 border-borderDark rounded-2xl py-4 text-[#1a1d24] text-xl font-black">9</button>
       <div></div>
-      <button onclick="pinFlash(this);pinLoginInput('0')" class="pin-btn bg-cardBg border-2 border-borderDark rounded-2xl py-4 text-[#1a1d24] text-xl font-black">0</button>
-      <button onclick="pinFlash(this);pinLoginHapus()" class="pin-btn pin-del bg-cardBg border-2 border-borderDark rounded-2xl py-4 text-black text-lg"><i class="fa-solid fa-delete-left"></i></button>
+      <button onclick="pinFlash(this);pinLoginInput('0')" class="pin-btn ripple-btn bg-cardBg border-2 border-borderDark rounded-2xl py-4 text-[#1a1d24] text-xl font-black">0</button>
+      <button onclick="pinFlash(this);pinLoginHapus()" class="pin-btn pin-del ripple-btn bg-cardBg border-2 border-borderDark rounded-2xl py-4 text-black text-lg"><i class="fa-solid fa-delete-left"></i></button>
     </div>
   </div>
 </div>
@@ -183,8 +278,9 @@
 <div id="app-content" class="hidden flex-col p-4 gap-4 w-full pb-16" style="min-height:100dvh;min-height:100vh;">
 
   <!-- HERO -->
-  <div class="flex items-stretch -mx-4 -mt-0 mb-1 shadow-[0_4px_16px_rgba(255,140,0,0.35)] brand-gradient-bg rounded-b-2xl overflow-hidden">
-    <div class="w-20 h-[72px] flex items-center justify-center flex-shrink-0 z-10 relative bg-black/5 border-r-2 border-black/10"><i class="fa-solid fa-chart-line text-3xl text-black"></i></div>
+  <div class="flex items-stretch -mx-4 -mt-0 mb-1 shadow-[0_4px_16px_rgba(255,140,0,0.35)] brand-gradient-bg rounded-b-2xl overflow-hidden relative">
+    <div class="hero-shine"></div>
+    <div class="w-20 h-[72px] flex items-center justify-center flex-shrink-0 z-10 relative bg-black/5 border-r-2 border-black/10"><i class="fa-solid fa-chart-line text-3xl text-black hero-icon-float"></i></div>
     <div class="h-[72px] flex flex-col justify-center px-4 flex-grow z-10 relative">
       <h1 class="text-[24px] font-black text-black leading-none tracking-wide mb-1">LAPORAN <span>KEUANGAN</span></h1>
       <div class="w-full h-[1.5px] bg-white/30 mb-1"></div>
@@ -193,29 +289,30 @@
   </div>
 
   <!-- FILTER PERIODE -->
-  <div class="bg-cardBg rounded-xl p-3 border-2 border-borderDark flex flex-col gap-3">
+  <div class="bg-cardBg rounded-xl p-3 border-2 border-borderDark flex flex-col gap-3 tap-card">
     <div class="text-[11px] font-black text-black flex items-center gap-1.5"><i class="fa-solid fa-calendar-days brand-text text-[10px]"></i> FILTER PERIODE</div>
     <div class="grid grid-cols-4 gap-1.5">
-      <button id="lk-quick-minggu-ini" onclick="setFilterQuick('minggu-ini')" class="py-2.5 rounded-lg text-[8.5px] font-black text-black bg-darkBg border-2 border-borderDark">MINGGU INI</button>
-      <button id="lk-quick-minggu-lalu" onclick="setFilterQuick('minggu-lalu')" class="py-2.5 rounded-lg text-[8.5px] font-black text-black bg-darkBg border-2 border-borderDark">MINGGU LALU</button>
-      <button id="lk-quick-bulan-ini" onclick="setFilterQuick('bulan-ini')" class="py-2.5 rounded-lg text-[8.5px] font-black text-black bg-darkBg border-2 border-borderDark">BULAN INI</button>
-      <button id="lk-quick-semua" onclick="setFilterQuick('semua')" class="py-2.5 rounded-lg text-[8.5px] font-black text-black border-2 border-borderDark" style="background:linear-gradient(90deg,#ff8c00,#ffb347);">SEMUA</button>
+      <button id="lk-quick-minggu-ini" onclick="setFilterQuick('minggu-ini')" class="ripple-btn lk-quick-btn py-2.5 rounded-lg text-[8.5px] font-black text-black bg-darkBg border-2 border-borderDark">MINGGU INI</button>
+      <button id="lk-quick-minggu-lalu" onclick="setFilterQuick('minggu-lalu')" class="ripple-btn lk-quick-btn py-2.5 rounded-lg text-[8.5px] font-black text-black bg-darkBg border-2 border-borderDark">MINGGU LALU</button>
+      <button id="lk-quick-bulan-ini" onclick="setFilterQuick('bulan-ini')" class="ripple-btn lk-quick-btn py-2.5 rounded-lg text-[8.5px] font-black text-black bg-darkBg border-2 border-borderDark">BULAN INI</button>
+      <button id="lk-quick-semua" onclick="setFilterQuick('semua')" class="ripple-btn lk-quick-btn py-2.5 rounded-lg text-[8.5px] font-black text-black border-2 border-borderDark active-quick" style="background:linear-gradient(90deg,#ff8c00,#ffb347);">SEMUA</button>
     </div>
     <div class="flex flex-col gap-2">
       <div class="text-[8px] font-black text-black tracking-wider">ATAU PILIH PERIODE MANUAL:</div>
       <div class="flex gap-2">
-        <div class="flex flex-col flex-1 min-w-0"><label class="text-[8px] text-black font-bold mb-0.5 leading-none">DARI</label><input type="date" id="lk-filter-dari" class="w-full bg-darkBg text-black text-[11px] px-2 py-2.5 rounded-lg border-2 border-borderDark outline-none"></div>
-        <div class="flex flex-col flex-1 min-w-0"><label class="text-[8px] text-black font-bold mb-0.5 leading-none">SAMPAI</label><input type="date" id="lk-filter-sampai" class="w-full bg-darkBg text-black text-[11px] px-2 py-2.5 rounded-lg border-2 border-borderDark outline-none"></div>
+        <div class="flex flex-col flex-1 min-w-0"><label class="text-[8px] text-black font-bold mb-0.5 leading-none">DARI</label><input type="date" id="lk-filter-dari" class="w-full bg-darkBg text-black text-[11px] px-2 py-2.5 rounded-lg border-2 border-borderDark outline-none transition-shadow focus:shadow-[0_0_0_3px_rgba(255,140,0,0.35)]"></div>
+        <div class="flex flex-col flex-1 min-w-0"><label class="text-[8px] text-black font-bold mb-0.5 leading-none">SAMPAI</label><input type="date" id="lk-filter-sampai" class="w-full bg-darkBg text-black text-[11px] px-2 py-2.5 rounded-lg border-2 border-borderDark outline-none transition-shadow focus:shadow-[0_0_0_3px_rgba(255,140,0,0.35)]"></div>
       </div>
-      <button onclick="applyFilterManual()" class="w-full py-2.5 text-[10px] font-black rounded-lg text-white flex items-center justify-center gap-1.5" style="background:linear-gradient(90deg,#16a34a,#22c55e);"><i class="fa-solid fa-check"></i> TERAPKAN PERIODE MANUAL</button>
+      <button onclick="applyFilterManual()" class="ripple-btn w-full py-2.5 text-[10px] font-black rounded-lg text-white flex items-center justify-center gap-1.5 transition-transform active:scale-95" style="background:linear-gradient(90deg,#16a34a,#22c55e);"><i class="fa-solid fa-check"></i> TERAPKAN PERIODE MANUAL</button>
     </div>
-    <div class="text-center text-[9px] font-bold text-black bg-darkBg rounded-lg py-2 border-2 border-dashed border-borderDark">
-      <i class="fa-solid fa-eye mr-1"></i> Menampilkan: <span id="lk-periode-label">SEMUA DATA</span>
+    <div class="text-center text-[9px] font-bold text-black bg-darkBg rounded-lg py-2 border-2 border-dashed border-borderDark flex items-center justify-center gap-1.5">
+      <i class="fa-solid fa-eye"></i> Menampilkan: <span id="lk-periode-label" class="brand-text">SEMUA DATA</span>
     </div>
   </div>
 
   <!-- TAB BAR -->
   <div class="lk-tab-bar">
+    <div id="lk-tab-indicator" class="lk-tab-indicator"></div>
     <button id="lk-tab-btn-ringkasan" onclick="switchLkTab('ringkasan')" class="lk-tab-btn active"><i class="fa-solid fa-chart-pie"></i> RINGKASAN</button>
     <button id="lk-tab-btn-beban" onclick="switchLkTab('beban')" class="lk-tab-btn"><i class="fa-solid fa-file-invoice-dollar"></i> BEBAN <span id="lk-tab-badge-beban" class="lk-tab-badge">0</span></button>
   </div>
@@ -226,17 +323,36 @@
   <!-- SUMMARY LABA KOTOR -->
   <div id="lk-total-omset" class="hidden">Rp 0</div>
   <div id="lk-total-modal" class="hidden">Rp 0</div>
-  <div class="rounded-xl p-4 border-2 flex flex-col gap-1" style="background:linear-gradient(135deg,#16a34a,#15803d);border-color:#166534;">
+  <div class="summary-card tap-card rounded-xl p-4 border-2 flex flex-col gap-1" style="background:linear-gradient(135deg,#16a34a,#15803d);border-color:#166534;">
+    <div class="glow-orb"></div>
     <div class="text-[9px] font-black text-white/90 tracking-wider flex items-center gap-1"><i class="fa-solid fa-sack-dollar text-[10px]"></i> LABA KOTOR</div>
     <div id="lk-total-laba-kotor" class="text-[24px] font-black text-white leading-none">Rp 0</div>
     <div id="lk-margin-kotor" class="text-[10px] font-bold text-white/80 mt-1">Margin: 0%</div>
+    <div class="summary-progress-track"><div id="lk-margin-kotor-bar" class="summary-progress-fill"></div></div>
   </div>
 
   <!-- LABA BERSIH (dipindah ke tab Ringkasan) -->
-  <div id="lk-laba-bersih-card" class="rounded-xl p-4 border-2 flex flex-col gap-1" style="background:linear-gradient(135deg,#16a34a,#15803d);border-color:#166534;">
+  <div id="lk-laba-bersih-card" class="summary-card tap-card rounded-xl p-4 border-2 flex flex-col gap-1" style="background:linear-gradient(135deg,#16a34a,#15803d);border-color:#166534;">
+    <div class="glow-orb"></div>
     <div class="text-[10px] font-black text-white/90 tracking-wider flex items-center gap-1"><i class="fa-solid fa-vault text-[11px]"></i> LABA BERSIH</div>
     <div id="lk-total-laba-bersih" class="text-[28px] font-black text-white leading-none">Rp 0</div>
     <div id="lk-margin-bersih" class="text-[10px] font-bold text-white/80 mt-1">Margin: 0%</div>
+    <div class="summary-progress-track"><div id="lk-margin-bersih-bar" class="summary-progress-fill"></div></div>
+  </div>
+
+  <!-- RINCIAN OMSET vs MODAL -->
+  <div class="bg-cardBg rounded-xl p-3.5 border-2 border-borderDark flex flex-col gap-2.5 tap-card">
+    <div class="text-[10px] font-black text-black tracking-wider flex items-center gap-1.5"><i class="fa-solid fa-scale-balanced brand-text text-[10px]"></i> OMSET vs MODAL</div>
+    <div class="flex items-center gap-2">
+      <span class="text-[8.5px] font-black text-black/60 w-11 flex-shrink-0">OMSET</span>
+      <div class="kat-bar-track"><div id="lk-bar-omset" class="kat-bar-fill" style="background:linear-gradient(90deg,#16a34a,#22c55e);"></div></div>
+      <span id="lk-bar-omset-label" class="text-[9px] font-black text-black w-20 text-right flex-shrink-0">Rp 0</span>
+    </div>
+    <div class="flex items-center gap-2">
+      <span class="text-[8.5px] font-black text-black/60 w-11 flex-shrink-0">MODAL</span>
+      <div class="kat-bar-track"><div id="lk-bar-modal" class="kat-bar-fill" style="background:linear-gradient(90deg,#ff8c00,#ffb347);"></div></div>
+      <span id="lk-bar-modal-label" class="text-[9px] font-black text-black w-20 text-right flex-shrink-0">Rp 0</span>
+    </div>
   </div>
 
   </div>
@@ -246,26 +362,32 @@
   <div id="lk-tab-beban" class="lk-tab-content">
 
   <!-- BEBAN OPERASIONAL -->
-  <div class="bg-cardBg rounded-xl border-2 border-borderDark overflow-hidden">
+  <div class="bg-cardBg rounded-xl border-2 border-borderDark overflow-hidden tap-card">
     <div class="px-3 py-2.5 text-[10px] font-black text-black border-b-2 border-borderDark flex items-center justify-between">
       <span><i class="fa-solid fa-file-invoice-dollar brand-text text-[10px] mr-1.5"></i>BEBAN OPERASIONAL</span>
-      <button onclick="bukaTambahBeban()" class="bg-black/10 hover:bg-black/20 px-2.5 py-1 rounded-lg text-[9px] font-black flex items-center gap-1"><i class="fa-solid fa-plus"></i> TAMBAH</button>
+      <button onclick="bukaTambahBeban()" class="ripple-btn bg-black/10 hover:bg-black/20 active:scale-90 transition-transform px-2.5 py-1 rounded-lg text-[9px] font-black flex items-center gap-1"><i class="fa-solid fa-plus"></i> TAMBAH</button>
     </div>
 
     <!-- Row payroll otomatis -->
-    <div class="flex items-center justify-between px-3 py-2.5 border-b-2 border-borderDark bg-black/5">
-      <div class="min-w-0 flex-1">
-        <div class="text-[10.5px] font-bold text-black flex items-center gap-1.5">
-          <i class="fa-solid fa-users text-[10px] brand-text"></i> PAYROLL
-          <span class="text-[7px] font-black bg-blue-500/15 text-blue-700 px-1.5 py-0.5 rounded-full">OTOMATIS</span>
+    <div class="flex items-center justify-between px-3 py-2.5 border-b-2 border-borderDark bg-black/5 beban-row">
+      <div class="min-w-0 flex-1 flex items-center gap-2.5">
+        <div class="kat-chip" style="background:rgba(59,130,246,0.15);color:#1d4ed8;"><i class="fa-solid fa-users"></i></div>
+        <div class="min-w-0">
+          <div class="text-[10.5px] font-bold text-black flex items-center gap-1.5">
+            PAYROLL
+            <span class="text-[7px] font-black bg-blue-500/15 text-blue-700 px-1.5 py-0.5 rounded-full">OTOMATIS</span>
+          </div>
+          <div class="text-[8.5px] text-black/60" id="lk-payroll-status">Ditarik dari Aplikasi Payroll</div>
         </div>
-        <div class="text-[8.5px] text-black/60" id="lk-payroll-status">Ditarik dari Aplikasi Payroll</div>
       </div>
       <div class="text-right flex-shrink-0 ml-2 flex items-center gap-2">
         <div id="lk-payroll-total" class="text-[12px] font-black text-red-600">Rp 0</div>
-        <button onclick="muatPayroll()" title="Refresh data payroll" class="w-7 h-7 rounded-lg bg-black/10 hover:bg-black/20 flex items-center justify-center text-black text-[10px]"><i class="fa-solid fa-rotate" id="lk-payroll-refresh-icon"></i></button>
+        <button onclick="muatPayroll()" title="Refresh data payroll" class="ripple-btn w-7 h-7 rounded-lg bg-black/10 hover:bg-black/20 active:scale-90 transition-transform flex items-center justify-center text-black text-[10px]"><i class="fa-solid fa-rotate" id="lk-payroll-refresh-icon"></i></button>
       </div>
     </div>
+
+    <!-- Rincian per kategori (mini bar chart) -->
+    <div id="lk-kategori-breakdown" class="hidden flex-col gap-2 px-3 py-2.5 border-b-2 border-borderDark"></div>
 
     <!-- List biaya manual -->
     <div id="lk-beban-list" class="flex flex-col"></div>
@@ -292,13 +414,19 @@ END $$;</textarea>
   </div>
 
   <!-- TOTAL BEBAN -->
-  <div class="rounded-xl p-4 border-2 flex flex-col gap-1" style="background:linear-gradient(135deg,#dc2626,#991b1b);border-color:#7f1d1d;">
+  <div class="summary-card tap-card rounded-xl p-4 border-2 flex flex-col gap-1" style="background:linear-gradient(135deg,#dc2626,#991b1b);border-color:#7f1d1d;">
+    <div class="glow-orb"></div>
     <div class="text-[9px] font-black text-white/90 tracking-wider flex items-center gap-1"><i class="fa-solid fa-arrow-trend-down text-[10px]"></i> TOTAL BEBAN OPERASIONAL</div>
     <div id="lk-total-beban" class="text-[22px] font-black text-white leading-none">Rp 0</div>
   </div>
 
   </div>
   <!-- /TAB: BEBAN -->
+
+  <!-- FAB TAMBAH BIAYA (hanya tampil di tab Beban) -->
+  <button id="lk-fab-tambah" onclick="bukaTambahBeban()" class="fab-add ripple-btn brand-gradient-bg text-black hidden" title="Tambah biaya">
+    <i class="fa-solid fa-plus text-xl"></i>
+  </button>
 
   <!-- SPACER: dorong footer ke bawah supaya layar terisi penuh -->
   <div class="flex-grow"></div>
@@ -312,16 +440,17 @@ END $$;</textarea>
 
 <!-- SHEET TAMBAH BEBAN -->
 <div id="sheet-tambah-beban" class="sheet-overlay" onclick="if(event.target===this) tutupTambahBeban()">
-  <div style="background:#ffffff;border-radius:20px 20px 0 0;padding:20px 20px 28px;width:100%;max-width:480px;border-top:2px solid #ff8c00;">
+  <div class="sheet-panel" style="background:#ffffff;border-radius:20px 20px 0 0;padding:20px 20px 28px;width:100%;max-width:480px;border-top:2px solid #ff8c00;">
+    <div class="sheet-handle"></div>
     <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px;">
       <span class="text-[13px] font-black brand-text"><i class="fa-solid fa-file-invoice-dollar mr-1.5"></i>TAMBAH BIAYA</span>
-      <button onclick="tutupTambahBeban()" style="background:none;border:none;font-size:20px;cursor:pointer;">&times;</button>
+      <button onclick="tutupTambahBeban()" class="ripple-btn active:scale-90 transition-transform" style="background:none;border:none;font-size:20px;cursor:pointer;">&times;</button>
     </div>
     <div class="flex flex-col gap-3">
       <div class="flex flex-col gap-1.5 relative">
         <label class="text-[10px] font-bold text-black tracking-wider">JENIS BIAYA</label>
         <input type="hidden" id="beban-kategori">
-        <button type="button" id="beban-kategori-trigger" onclick="toggleKategoriDropdown()" class="w-full bg-darkBg border-2 border-borderDark rounded-lg px-3 py-2.5 text-xs text-left outline-none flex items-center justify-between gap-2">
+        <button type="button" id="beban-kategori-trigger" onclick="toggleKategoriDropdown()" class="ripple-btn w-full bg-darkBg border-2 border-borderDark rounded-lg px-3 py-2.5 text-xs text-left outline-none flex items-center justify-between gap-2 transition-shadow focus:shadow-[0_0_0_3px_rgba(255,140,0,0.35)]">
           <span id="beban-kategori-label" class="text-black/50 truncate">Pilih jenis biaya...</span>
           <i class="fa-solid fa-chevron-down text-[9px] text-black/60 flex-shrink-0"></i>
         </button>
@@ -334,17 +463,17 @@ END $$;</textarea>
       </div>
       <div class="flex flex-col gap-1.5">
         <label class="text-[10px] font-bold text-black tracking-wider">NOMINAL (Rp)</label>
-        <input id="beban-nominal" type="text" inputmode="numeric" placeholder="0" oninput="formatRupiahInput(this)" class="w-full bg-darkBg border-2 border-borderDark rounded-lg px-3 py-2.5 text-xs text-black placeholder-black/50 outline-none">
+        <input id="beban-nominal" type="text" inputmode="numeric" placeholder="0" oninput="formatRupiahInput(this)" class="w-full bg-darkBg border-2 border-borderDark rounded-lg px-3 py-2.5 text-xs text-black placeholder-black/50 outline-none transition-shadow focus:shadow-[0_0_0_3px_rgba(255,140,0,0.35)]">
       </div>
       <div class="flex flex-col gap-1.5">
         <label class="text-[10px] font-bold text-black tracking-wider">TANGGAL</label>
-        <input id="beban-tanggal" type="date" class="w-full bg-darkBg border-2 border-borderDark rounded-lg px-3 py-2.5 text-xs text-black outline-none">
+        <input id="beban-tanggal" type="date" class="w-full bg-darkBg border-2 border-borderDark rounded-lg px-3 py-2.5 text-xs text-black outline-none transition-shadow focus:shadow-[0_0_0_3px_rgba(255,140,0,0.35)]">
       </div>
       <div class="flex flex-col gap-1.5">
         <label class="text-[10px] font-bold text-black tracking-wider">KETERANGAN (opsional)</label>
-        <input id="beban-keterangan" type="text" placeholder="catatan tambahan..." class="w-full bg-darkBg border-2 border-borderDark rounded-lg px-3 py-2.5 text-xs text-black placeholder-black/50 outline-none">
+        <input id="beban-keterangan" type="text" placeholder="catatan tambahan..." class="w-full bg-darkBg border-2 border-borderDark rounded-lg px-3 py-2.5 text-xs text-black placeholder-black/50 outline-none transition-shadow focus:shadow-[0_0_0_3px_rgba(255,140,0,0.35)]">
       </div>
-      <button id="btn-simpan-beban" onclick="simpanBeban()" class="w-full brand-gradient-bg text-black font-bold text-sm py-3 rounded-xl flex justify-center items-center gap-2 mt-1"><i class="fa-solid fa-floppy-disk"></i> SIMPAN BIAYA</button>
+      <button id="btn-simpan-beban" onclick="simpanBeban()" class="ripple-btn w-full brand-gradient-bg text-black font-bold text-sm py-3 rounded-xl flex justify-center items-center gap-2 mt-1 transition-transform active:scale-95"><i class="fa-solid fa-floppy-disk"></i> SIMPAN BIAYA</button>
     </div>
   </div>
 </div>
@@ -392,8 +521,49 @@ END $$;</textarea>
     const t = document.getElementById('toast');
     t.textContent = msg;
     t.style.display = 'block';
+    t.style.opacity = '0';
+    t.style.transform = 'translateX(-50%) translateY(14px)';
+    requestAnimationFrame(() => {
+      t.style.opacity = '1';
+      t.style.transform = 'translateX(-50%) translateY(0)';
+    });
     clearTimeout(window._toastTimer);
-    window._toastTimer = setTimeout(() => { t.style.display = 'none'; }, 2600);
+    window._toastTimer = setTimeout(() => {
+      t.style.opacity = '0';
+      t.style.transform = 'translateX(-50%) translateY(14px)';
+      setTimeout(() => { t.style.display = 'none'; }, 300);
+    }, 2600);
+  }
+
+  // ==================== RIPPLE EFFECT UNIVERSAL ====================
+  document.addEventListener('pointerdown', function(e) {
+    const btn = e.target.closest('.ripple-btn');
+    if (!btn) return;
+    const rect = btn.getBoundingClientRect();
+    const size = Math.max(rect.width, rect.height) * 1.4;
+    const ink = document.createElement('span');
+    ink.className = 'ripple-ink';
+    ink.style.width = ink.style.height = size + 'px';
+    ink.style.left = (e.clientX - rect.left - size / 2) + 'px';
+    ink.style.top = (e.clientY - rect.top - size / 2) + 'px';
+    const prevPos = getComputedStyle(btn).position;
+    if (prevPos === 'static') btn.style.position = 'relative';
+    btn.appendChild(ink);
+    setTimeout(() => ink.remove(), 560);
+  }, { passive: true });
+
+  // ==================== ANIMASI ANGKA (COUNT-UP HALUS) ====================
+  const _numAnimState = {};
+  function animateNumberText(el, targetText, key) {
+    if (!el) return;
+    const prevRaw = _numAnimState[key];
+    _numAnimState[key] = targetText;
+    if (prevRaw === undefined) { el.textContent = targetText; return; }
+    if (prevRaw === targetText) return;
+    el.textContent = targetText;
+    el.classList.remove('num-pulse');
+    void el.offsetWidth;
+    el.classList.add('num-pulse');
   }
 
   // ==================== PIN LOGIN (pakai pin_login yang sama dgn Inventory) ====================
@@ -484,6 +654,10 @@ END $$;</textarea>
     document.getElementById('lk-tab-beban').classList.toggle('active', which === 'beban');
     document.getElementById('lk-tab-btn-ringkasan').classList.toggle('active', which === 'ringkasan');
     document.getElementById('lk-tab-btn-beban').classList.toggle('active', which === 'beban');
+    const indicator = document.getElementById('lk-tab-indicator');
+    if (indicator) indicator.style.transform = which === 'beban' ? 'translateX(100%)' : 'translateX(0)';
+    const fab = document.getElementById('lk-fab-tambah');
+    if (fab) fab.classList.toggle('hidden', which !== 'beban');
     if (which === 'beban') window.scrollTo({ top: 0, behavior: 'instant' });
   }
 
@@ -494,9 +668,10 @@ END $$;</textarea>
       const el = document.getElementById(id);
       if (!el) return;
       el.style.background = ''; if (!el.classList.contains('bg-darkBg')) el.classList.add('bg-darkBg');
+      el.classList.remove('active-quick');
     });
     const activeId = map[which];
-    if (activeId) { const el = document.getElementById(activeId); if (el) { el.style.background = 'linear-gradient(90deg,#ff8c00,#ffb347)'; el.classList.remove('bg-darkBg'); } }
+    if (activeId) { const el = document.getElementById(activeId); if (el) { el.style.background = 'linear-gradient(90deg,#ff8c00,#ffb347)'; el.classList.remove('bg-darkBg'); el.classList.add('active-quick'); } }
   }
   function setFilterQuick(which) {
     const now = new Date();
@@ -658,29 +833,85 @@ END $$;</textarea>
   }
 
   // ==================== RENDER ====================
+  // Palet warna & ikon untuk chip kategori beban (konsisten per nama kategori)
+  const _KAT_STYLE_POOL = [
+    { bg: 'rgba(255,140,0,0.15)',  fg: '#c2570a', icon: 'fa-bolt' },
+    { bg: 'rgba(220,38,38,0.13)',  fg: '#b91c1c', icon: 'fa-box' },
+    { bg: 'rgba(147,51,234,0.13)', fg: '#7e22ce', icon: 'fa-house' },
+    { bg: 'rgba(6,182,212,0.14)',  fg: '#0e7490', icon: 'fa-car' },
+    { bg: 'rgba(234,179,8,0.16)',  fg: '#a16207', icon: 'fa-screwdriver-wrench' },
+    { bg: 'rgba(16,185,129,0.14)', fg: '#047857', icon: 'fa-receipt' },
+  ];
+  function _katStyle(nama) {
+    let hash = 0;
+    for (let i = 0; i < (nama || '').length; i++) hash = (hash * 31 + nama.charCodeAt(i)) >>> 0;
+    return _KAT_STYLE_POOL[hash % _KAT_STYLE_POOL.length];
+  }
+
   function renderSemua() {
-    document.getElementById('lk-total-omset').textContent = fmtRp(_cacheOmset);
-    document.getElementById('lk-total-modal').textContent = fmtRp(_cacheModal);
-    document.getElementById('lk-total-laba-kotor').textContent = fmtRp(_cacheLabaKotor);
+    animateNumberText(document.getElementById('lk-total-omset'), fmtRp(_cacheOmset), 'omset');
+    animateNumberText(document.getElementById('lk-total-modal'), fmtRp(_cacheModal), 'modal');
+    animateNumberText(document.getElementById('lk-total-laba-kotor'), fmtRp(_cacheLabaKotor), 'labaKotor');
     const marginKotor = _cacheOmset > 0 ? (_cacheLabaKotor / _cacheOmset * 100) : 0;
     document.getElementById('lk-margin-kotor').textContent = 'Margin: ' + marginKotor.toFixed(1) + '%';
+    const barKotor = document.getElementById('lk-margin-kotor-bar');
+    if (barKotor) barKotor.style.width = Math.max(0, Math.min(100, marginKotor)) + '%';
 
-    document.getElementById('lk-payroll-total').textContent = fmtRp(_cachePayroll);
+    // Bar Omset vs Modal (relatif terhadap yang terbesar)
+    const maxOM = Math.max(_cacheOmset, _cacheModal, 1);
+    const barOmsetEl = document.getElementById('lk-bar-omset');
+    const barModalEl = document.getElementById('lk-bar-modal');
+    if (barOmsetEl) barOmsetEl.style.width = (_cacheOmset / maxOM * 100) + '%';
+    if (barModalEl) barModalEl.style.width = (_cacheModal / maxOM * 100) + '%';
+    const lblOmset = document.getElementById('lk-bar-omset-label');
+    const lblModal = document.getElementById('lk-bar-modal-label');
+    if (lblOmset) lblOmset.textContent = fmtRp(_cacheOmset);
+    if (lblModal) lblModal.textContent = fmtRp(_cacheModal);
+
+    animateNumberText(document.getElementById('lk-payroll-total'), fmtRp(_cachePayroll), 'payroll');
 
     const totalBebanManual = _cacheBebanManual.reduce((s, r) => s + (r.nominal || 0), 0);
     const totalBeban = _cachePayroll + totalBebanManual;
-    document.getElementById('lk-total-beban').textContent = fmtRp(totalBeban);
+    animateNumberText(document.getElementById('lk-total-beban'), fmtRp(totalBeban), 'totalBeban');
 
     const labaBersih = _cacheLabaKotor - totalBeban;
-    document.getElementById('lk-total-laba-bersih').textContent = fmtRp(labaBersih);
+    animateNumberText(document.getElementById('lk-total-laba-bersih'), fmtRp(labaBersih), 'labaBersih');
     const marginBersih = _cacheOmset > 0 ? (labaBersih / _cacheOmset * 100) : 0;
     document.getElementById('lk-margin-bersih').textContent = 'Margin: ' + marginBersih.toFixed(1) + '%';
+    const barBersih = document.getElementById('lk-margin-bersih-bar');
+    if (barBersih) barBersih.style.width = Math.max(0, Math.min(100, marginBersih)) + '%';
     const card = document.getElementById('lk-laba-bersih-card');
     if (labaBersih < 0) card.style.background = 'linear-gradient(135deg,#dc2626,#991b1b)';
     else card.style.background = 'linear-gradient(135deg,#16a34a,#15803d)';
 
     const badge = document.getElementById('lk-tab-badge-beban');
     if (badge) badge.textContent = _cacheBebanManual.length;
+
+    // Rincian per kategori (mini bar chart)
+    const breakdownEl = document.getElementById('lk-kategori-breakdown');
+    if (breakdownEl) {
+      const byKat = {};
+      _cacheBebanManual.forEach(r => { byKat[r.kategori] = (byKat[r.kategori] || 0) + (r.nominal || 0); });
+      const entries = Object.entries(byKat).sort((a, b) => b[1] - a[1]).slice(0, 5);
+      if (entries.length === 0) {
+        breakdownEl.classList.add('hidden');
+        breakdownEl.innerHTML = '';
+      } else {
+        breakdownEl.classList.remove('hidden');
+        breakdownEl.classList.add('flex');
+        const maxKat = entries[0][1] || 1;
+        breakdownEl.innerHTML = `<div class="text-[8px] font-black text-black/50 tracking-wider mb-0.5"><i class="fa-solid fa-chart-simple mr-1"></i>RINCIAN PER KATEGORI</div>` +
+          entries.map(([nama, nominal]) => {
+            const st = _katStyle(nama);
+            const pct = (nominal / maxKat * 100).toFixed(0);
+            return `<div class="flex items-center gap-2">
+              <span class="text-[8.5px] font-bold text-black/70 w-16 truncate flex-shrink-0">${escapeHtml(nama)}</span>
+              <div class="kat-bar-track"><div class="kat-bar-fill" style="width:${pct}%;background:${st.fg};"></div></div>
+              <span class="text-[8.5px] font-black text-black w-16 text-right flex-shrink-0">${fmtRp(nominal)}</span>
+            </div>`;
+          }).join('');
+      }
+    }
 
     const listEl = document.getElementById('lk-beban-list');
     const banner = document.getElementById('lk-beban-missing-banner');
@@ -692,16 +923,20 @@ END $$;</textarea>
       if (_cacheBebanManual.length === 0) {
         listEl.innerHTML = '<div class="text-center text-black text-[11px] py-6 flex flex-col items-center gap-2"><i class="fa-solid fa-inbox text-2xl opacity-40"></i>Belum ada biaya manual di periode ini.</div>';
       } else {
-        listEl.innerHTML = _cacheBebanManual.map(r => {
+        listEl.innerHTML = _cacheBebanManual.map((r, idx) => {
           const tglDisplay = r.tanggal ? new Date(r.tanggal + 'T00:00:00').toLocaleDateString('id-ID', {day:'2-digit',month:'short',year:'numeric'}) : '-';
-          return `<div class="flex items-center justify-between px-3 py-2.5 border-b-2 border-borderDark last:border-0">
-            <div class="min-w-0 flex-1">
-              <div class="text-[10.5px] font-bold text-black truncate">${escapeHtml(r.kategori)}</div>
-              <div class="text-[8.5px] text-black/60">${tglDisplay}${r.keterangan ? ' • ' + escapeHtml(r.keterangan) : ''}</div>
+          const st = _katStyle(r.kategori);
+          return `<div class="beban-row beban-row-in flex items-center justify-between px-3 py-2.5 border-b-2 border-borderDark last:border-0" style="animation-delay:${Math.min(idx * 35, 350)}ms;">
+            <div class="min-w-0 flex-1 flex items-center gap-2.5">
+              <div class="kat-chip" style="background:${st.bg};color:${st.fg};"><i class="fa-solid ${st.icon}"></i></div>
+              <div class="min-w-0">
+                <div class="text-[10.5px] font-bold text-black truncate">${escapeHtml(r.kategori)}</div>
+                <div class="text-[8.5px] text-black/60">${tglDisplay}${r.keterangan ? ' • ' + escapeHtml(r.keterangan) : ''}</div>
+              </div>
             </div>
             <div class="text-right flex-shrink-0 ml-2 flex items-center gap-2">
               <div class="text-[11px] font-black text-red-600">Rp ${(r.nominal||0).toLocaleString('id-ID')}</div>
-              <button onclick="hapusBeban(${r.id})" class="w-7 h-7 rounded-lg bg-red-500/10 hover:bg-red-500/20 flex items-center justify-center text-red-600 text-[10px]"><i class="fa-solid fa-trash"></i></button>
+              <button onclick="hapusBeban(${r.id})" class="ripple-btn w-7 h-7 rounded-lg bg-red-500/10 hover:bg-red-500/20 active:scale-90 transition-transform flex items-center justify-center text-red-600 text-[10px]"><i class="fa-solid fa-trash"></i></button>
             </div>
           </div>`;
         }).join('');
@@ -746,7 +981,7 @@ END $$;</textarea>
     const opsEl = document.getElementById('beban-kategori-options');
     let html = '';
     filtered.forEach(nama => {
-      html += `<div class="flex items-center justify-between px-3 py-2.5 text-xs font-bold text-black hover:bg-darkBg cursor-pointer border-b border-borderDark/20 last:border-b-0" onclick="pilihKategoriBiaya('${escapeHtml(nama).replace(/'/g, "\\'")}')">
+      html += `<div class="kat-option flex items-center justify-between px-3 py-2.5 text-xs font-bold text-black hover:bg-darkBg cursor-pointer border-b border-borderDark/20 last:border-b-0" onclick="pilihKategoriBiaya('${escapeHtml(nama).replace(/'/g, "\\'")}')">
         <span class="truncate">${escapeHtml(nama)}</span>
         <i class="fa-solid fa-trash-can text-[10px] text-black/30 hover:text-red-500 flex-shrink-0 ml-2 px-1" onclick="event.stopPropagation();hapusMasterKategoriBiaya('${escapeHtml(nama).replace(/'/g, "\\'")}')"></i>
       </div>`;
