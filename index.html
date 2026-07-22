@@ -697,13 +697,13 @@ END $$;</textarea>
   function setFilterQuick(which) {
     const now = new Date();
     if (which === 'minggu-ini') {
-      const awal = _awalMingguIni(now); const akhir = new Date(awal); akhir.setDate(akhir.getDate()+6);
+      const awal = _awalMingguIni(now); const akhir = new Date(awal); akhir.setDate(akhir.getDate()+5);
       document.getElementById('lk-filter-dari').value = _fmtInput(awal);
       document.getElementById('lk-filter-sampai').value = _fmtInput(akhir);
     } else if (which === 'minggu-lalu') {
       const awalMingguIni = _awalMingguIni(now);
-      const akhir = new Date(awalMingguIni); akhir.setDate(akhir.getDate()-1);
       const awal = new Date(awalMingguIni); awal.setDate(awal.getDate()-7);
+      const akhir = new Date(awal); akhir.setDate(akhir.getDate()+5);
       document.getElementById('lk-filter-dari').value = _fmtInput(awal);
       document.getElementById('lk-filter-sampai').value = _fmtInput(akhir);
     } else if (which === 'bulan-ini') {
