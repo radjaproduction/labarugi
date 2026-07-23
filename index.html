@@ -520,8 +520,8 @@ END $$;</textarea>
   // ==================== KONEKSI DUA SUPABASE (Inventory & Payroll) - READ, kecuali tabel beban_operasional yang read+write ====================
   const INV_URL = 'https://wyalxprcrrisowsqftgt.supabase.co';
   const INV_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Ind5YWx4cHJjcnJpc293c3FmdGd0Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODEzNDg2MDcsImV4cCI6MjA5NjkyNDYwN30.yA3g5bydgYbcrp1KOvYf0G7JXJHmbjhoCw928A0TzKc';
-  const PAY_URL = 'https://jziegbpuudswljwasctn.supabase.co';
-  const PAY_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imp6aWVnYnB1dWRzd2xqd2FzY3RuIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODIyMTMwNTQsImV4cCI6MjA5Nzc4OTA1NH0.ywgjRyZv3UxtYgbvVvoLr_Hf02u5wW8yP2v054WD98s';
+  const PAY_URL = 'https://tnhfxiglwnkvchozwjzf.supabase.co';
+  const PAY_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InRuaGZ4aWdsd25rdmNob3p3anpmIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODQ0NTY3NTIsImV4cCI6MjEwMDAzMjc1Mn0.Tmrrfs1WHcb7xFMUs6O9ScWuMfS8XPDnTxfKh4TH_L0';
 
   const sbInv = supabase.createClient(INV_URL, INV_KEY);
   const sbPay = supabase.createClient(PAY_URL, PAY_KEY);
