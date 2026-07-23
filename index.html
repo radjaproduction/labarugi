@@ -368,6 +368,13 @@
   <!-- TAB: BEBAN -->
   <div id="lk-tab-beban" class="lk-tab-content">
 
+  <!-- TOTAL BEBAN -->
+  <div class="summary-card tap-card rounded-xl p-4 border-2 flex flex-col gap-1" style="background:linear-gradient(135deg,#dc2626,#991b1b);border-color:#7f1d1d;">
+    <div class="glow-orb"></div>
+    <div class="text-[9px] font-black text-white/90 tracking-wider flex items-center gap-1"><i class="fa-solid fa-arrow-trend-down text-[10px]"></i> TOTAL BEBAN OPERASIONAL</div>
+    <div id="lk-total-beban" class="text-[22px] font-black text-white leading-none">Rp 0</div>
+  </div>
+
   <!-- BEBAN OPERASIONAL -->
   <div class="bg-cardBg rounded-xl border-2 border-borderDark overflow-hidden tap-card">
     <div class="px-3 py-2.5 text-[10px] font-black text-black border-b-2 border-borderDark flex items-center justify-between">
@@ -419,6 +426,9 @@
     <!-- List biaya manual -->
     <div id="lk-beban-list" class="flex flex-col"></div>
 
+    <!-- Pagination list biaya manual -->
+    <div id="lk-beban-pagination" class="hidden items-center justify-between px-3 py-2 border-t-2 border-borderDark"></div>
+
     <!-- Banner jika tabel belum ada -->
     <div id="lk-beban-missing-banner" class="hidden p-3 border-t-2 border-red-400/40 bg-red-500/10">
       <div class="text-[10px] font-black text-red-700 mb-1"><i class="fa-solid fa-triangle-exclamation mr-1"></i>TABEL BELUM DIBUAT</div>
@@ -442,13 +452,6 @@ BEGIN
 END $$;</textarea>
       <button onclick="muatBebanManual()" class="w-full mt-2 py-2 text-[9px] font-black rounded-lg text-white" style="background:linear-gradient(90deg,#16a34a,#22c55e);"><i class="fa-solid fa-rotate mr-1"></i> SUDAH DIJALANKAN, CEK LAGI</button>
     </div>
-  </div>
-
-  <!-- TOTAL BEBAN -->
-  <div class="summary-card tap-card rounded-xl p-4 border-2 flex flex-col gap-1" style="background:linear-gradient(135deg,#dc2626,#991b1b);border-color:#7f1d1d;">
-    <div class="glow-orb"></div>
-    <div class="text-[9px] font-black text-white/90 tracking-wider flex items-center gap-1"><i class="fa-solid fa-arrow-trend-down text-[10px]"></i> TOTAL BEBAN OPERASIONAL</div>
-    <div id="lk-total-beban" class="text-[22px] font-black text-white leading-none">Rp 0</div>
   </div>
 
   </div>
@@ -812,6 +815,8 @@ END $$;</textarea>
   let _cacheBebanManual = [];
   let _bebanTableMissing = false;
   let _bebanSumberFilter = 'semua';
+  let _bebanHalaman = 1;
+  const BEBAN_PER_HALAMAN = 10;
   let _lightboxFotoId = null;
   let _lightboxRotasi = 0;
 
@@ -898,6 +903,7 @@ END $$;</textarea>
   // ==================== BEBAN MANUAL (tabel baru di Inventory) ====================
   async function muatBebanManual() {
     const { dariISO, sampaiISO } = getFilterISO();
+    _bebanHalaman = 1;
     try {
       let q = sbInv.from('beban_operasional').select('*').order('tanggal', { ascending: false });
       const { data, error } = await q;
@@ -942,6 +948,7 @@ END $$;</textarea>
 
   function setBebanSumberFilter(which) {
     _bebanSumberFilter = which;
+    _bebanHalaman = 1;
     const map = { 'semua': 'lk-sumber-semua', 'ADMIN': 'lk-sumber-admin', 'OWNER': 'lk-sumber-owner' };
     Object.values(map).forEach(id => {
       const el = document.getElementById(id);
@@ -1031,20 +1038,30 @@ END $$;</textarea>
     }
 
     const listEl = document.getElementById('lk-beban-list');
+    const pagEl = document.getElementById('lk-beban-pagination');
     const banner = document.getElementById('lk-beban-missing-banner');
     if (_bebanTableMissing) {
       banner.classList.remove('hidden');
       listEl.innerHTML = '';
+      if (pagEl) { pagEl.classList.add('hidden'); pagEl.classList.remove('flex'); pagEl.innerHTML = ''; }
     } else {
       banner.classList.add('hidden');
+      const totalHalaman = Math.max(1, Math.ceil(dataTampil.length / BEBAN_PER_HALAMAN));
+      if (_bebanHalaman > totalHalaman) _bebanHalaman = totalHalaman;
+      if (_bebanHalaman < 1) _bebanHalaman = 1;
+      const startIdx = (_bebanHalaman - 1) * BEBAN_PER_HALAMAN;
+      const dataHalaman = dataTampil.slice(startIdx, startIdx + BEBAN_PER_HALAMAN);
       if (dataTampil.length === 0) {
         listEl.innerHTML = '<div class="text-center text-black text-[11px] py-6 flex flex-col items-center gap-2"><i class="fa-solid fa-inbox text-2xl opacity-40"></i>Belum ada biaya' + (_bebanSumberFilter === 'semua' ? ' manual di periode ini.' : ' dari ' + _bebanSumberFilter + ' di periode ini.') + '</div>';
+        if (pagEl) { pagEl.classList.add('hidden'); pagEl.classList.remove('flex'); pagEl.innerHTML = ''; }
       } else {
-        listEl.innerHTML = dataTampil.map((r, idx) => {
+        listEl.innerHTML = dataHalaman.map((r, i) => {
+          const idx = startIdx + i;
           const tglDisplay = r.tanggal ? new Date(r.tanggal + 'T00:00:00').toLocaleDateString('id-ID', {day:'2-digit',month:'short',year:'numeric'}) : '-';
           const st = _katStyle(r.kategori);
           return `<div class="beban-row flex items-center justify-between px-3 py-2.5 border-b-2 border-borderDark last:border-0">
             <div class="min-w-0 flex-1 flex items-center gap-2.5">
+              <div class="text-[10px] font-black text-black/50 w-5 flex-shrink-0 text-center">${idx + 1}</div>
               <div class="kat-chip" style="background:${st.bg};color:${st.fg};"><i class="fa-solid ${st.icon}"></i></div>
               <div class="min-w-0">
                 <div class="text-[10.5px] font-bold text-black truncate flex items-center gap-1.5">
@@ -1061,8 +1078,26 @@ END $$;</textarea>
             </div>
           </div>`;
         }).join('');
+
+        if (pagEl) {
+          if (totalHalaman <= 1) {
+            pagEl.classList.add('hidden'); pagEl.classList.remove('flex'); pagEl.innerHTML = '';
+          } else {
+            pagEl.classList.remove('hidden'); pagEl.classList.add('flex');
+            pagEl.innerHTML = `
+              <div class="text-[9px] font-bold text-black/50">Hal ${_bebanHalaman}/${totalHalaman} · ${dataTampil.length} data</div>
+              <div class="flex items-center gap-1.5">
+                <button onclick="gantiHalamanBeban(${_bebanHalaman - 1})" ${_bebanHalaman <= 1 ? 'disabled' : ''} class="w-7 h-7 rounded-lg bg-black/5 flex items-center justify-center text-black/70 text-[10px] disabled:opacity-30"><i class="fa-solid fa-chevron-left"></i></button>
+                <button onclick="gantiHalamanBeban(${_bebanHalaman + 1})" ${_bebanHalaman >= totalHalaman ? 'disabled' : ''} class="w-7 h-7 rounded-lg bg-black/5 flex items-center justify-center text-black/70 text-[10px] disabled:opacity-30"><i class="fa-solid fa-chevron-right"></i></button>
+              </div>`;
+          }
+        }
       }
     }
+  }
+  function gantiHalamanBeban(halBaru) {
+    _bebanHalaman = halBaru;
+    renderSemua();
   }
   function escapeHtml(s) { return String(s||'').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
 
