@@ -335,7 +335,6 @@
     <div class="text-[9px] font-black text-white/90 tracking-wider flex items-center gap-1"><i class="fa-solid fa-sack-dollar text-[10px]"></i> LABA KOTOR</div>
     <div id="lk-total-laba-kotor" class="text-[24px] font-black text-white leading-none">Rp 0</div>
     <div id="lk-margin-kotor" class="text-[10px] font-bold text-white/80 mt-1">Margin: 0%</div>
-    <div id="lk-laba-kotor-periode" class="text-[8px] font-bold text-white/70 mt-0.5"></div>
     <div class="summary-progress-track"><div id="lk-margin-kotor-bar" class="summary-progress-fill"></div></div>
   </div>
 
@@ -741,19 +740,6 @@ END $$;</textarea>
   }
   function _fmtInput(d) { return d.getFullYear() + '-' + String(d.getMonth()+1).padStart(2,'0') + '-' + String(d.getDate()).padStart(2,'0'); }
 
-  // ==================== PERIODE TETAP UNTUK LABA KOTOR ====================
-  // Laba Kotor SELALU pakai data MINGGU LALU (Senin s/d Sabtu), terpisah dari
-  // Filter Periode di atas — filter itu cuma ngatur Beban & Payroll. Jadi berapa pun
-  // filter yang aktif (Minggu Ini/Bulan Ini/Semua/manual), angka Laba Kotor & Laba
-  // Bersih tidak ikut berubah, tetap merujuk ke minggu lalu.
-  function _rangeLabaKotorTetap() {
-    const now = new Date();
-    const awalMingguIni = _awalMingguIni(now);
-    const awal = new Date(awalMingguIni); awal.setDate(awal.getDate() - 7);
-    const akhir = new Date(awal); akhir.setDate(akhir.getDate() + 5);
-    return { dari: awal, sampai: akhir };
-  }
-
   // ==================== TAB SWITCH ====================
   function switchLkTab(which) {
     document.getElementById('lk-tab-ringkasan').classList.toggle('active', which === 'ringkasan');
@@ -844,10 +830,9 @@ END $$;</textarea>
   }
 
   async function muatLabaKotor() {
-    // FIXED: Laba Kotor selalu pakai data minggu lalu (lihat _rangeLabaKotorTetap),
-    // tidak ikut Filter Periode di atas (yang cuma berlaku untuk Beban & Payroll).
-    const { dari, sampai } = _rangeLabaKotorTetap();
-    sampai.setHours(23, 59, 59, 999);
+    const { dariISO, sampaiISO } = getFilterISO();
+    const dari = dariISO ? new Date(dariISO + 'T00:00:00') : null;
+    const sampai = sampaiISO ? new Date(sampaiISO + 'T23:59:59') : null;
 
     const [trxRows, itemRows, modelRows] = await Promise.all([
       fetchAllRows(sbInv, 'transaksi'),
@@ -984,12 +969,6 @@ END $$;</textarea>
     document.getElementById('lk-margin-kotor').textContent = 'Margin: ' + marginKotor.toFixed(1) + '%';
     const barKotor = document.getElementById('lk-margin-kotor-bar');
     if (barKotor) barKotor.style.width = Math.max(0, Math.min(100, marginKotor)) + '%';
-    const lblLabaKotorPeriode = document.getElementById('lk-laba-kotor-periode');
-    if (lblLabaKotorPeriode) {
-      const { dari, sampai } = _rangeLabaKotorTetap();
-      const fmt = (d) => d.toLocaleDateString('id-ID', { day: '2-digit', month: 'short', year: 'numeric' });
-      lblLabaKotorPeriode.textContent = 'Data minggu lalu: ' + fmt(dari) + ' — ' + fmt(sampai) + ' (tetap, tidak ikut filter)';
-    }
 
     // Bar Omset vs Modal (relatif terhadap yang terbesar)
     const maxOM = Math.max(_cacheOmset, _cacheModal, 1);
