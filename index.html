@@ -312,8 +312,9 @@
       </div>
       <button onclick="applyFilterManual()" class="w-full py-2.5 text-[10px] font-black rounded-lg text-white flex items-center justify-center gap-1.5" style="background:linear-gradient(90deg,#16a34a,#22c55e);"><i class="fa-solid fa-check"></i> TERAPKAN PERIODE MANUAL</button>
     </div>
-    <div class="text-center text-[9px] font-bold text-black bg-darkBg rounded-lg py-2 border-2 border-dashed border-borderDark flex items-center justify-center gap-1.5">
-      <i class="fa-solid fa-eye"></i> Menampilkan: <span id="lk-periode-label" class="brand-text">SEMUA DATA</span>
+    <div class="text-center text-[9px] font-bold text-black bg-darkBg rounded-lg py-2 border-2 border-dashed border-borderDark flex flex-col items-center justify-center gap-1">
+      <div class="flex items-center justify-center gap-1.5"><i class="fa-solid fa-eye"></i> Laba Kotor: <span id="lk-periode-label" class="brand-text">SEMUA DATA</span></div>
+      <div id="lk-periode-beban-wrap" class="flex items-center justify-center gap-1.5 text-black/60 text-[8px]"><i class="fa-solid fa-arrow-trend-down"></i> Beban &amp; Payroll: <span id="lk-periode-beban-label" class="text-black/70">SEMUA DATA</span></div>
     </div>
   </div>
 
@@ -768,13 +769,19 @@ END $$;</textarea>
   function setFilterQuick(which) {
     const now = new Date();
     if (which === 'minggu-ini') {
-      const awal = _awalMingguIni(now); const akhir = new Date(awal); akhir.setDate(akhir.getDate()+5);
+      // Minggu berjalan (operasional, Beban & Payroll) = Senin-Sabtu yang memuat hari ini.
+      // Filter yang di-set di UI adalah periode LABA KOTOR (Sabtu-Jumat), yaitu minggu berjalan digeser -2/-1 hari,
+      // supaya nanti getFilterBebanISO() menggesernya lagi +2/+1 dan menghasilkan balik minggu berjalan yang benar.
+      const mingguAwal = _awalMingguIni(now); // Senin minggu berjalan
+      const awal = new Date(mingguAwal); awal.setDate(awal.getDate()-2); // Sabtu sebelumnya
+      const akhir = new Date(mingguAwal); akhir.setDate(akhir.getDate()+4); // Jumat minggu berjalan
       document.getElementById('lk-filter-dari').value = _fmtInput(awal);
       document.getElementById('lk-filter-sampai').value = _fmtInput(akhir);
     } else if (which === 'minggu-lalu') {
-      const awalMingguIni = _awalMingguIni(now);
-      const awal = new Date(awalMingguIni); awal.setDate(awal.getDate()-7);
-      const akhir = new Date(awal); akhir.setDate(akhir.getDate()+5);
+      const mingguAwal = _awalMingguIni(now);
+      const mingguLaluAwal = new Date(mingguAwal); mingguLaluAwal.setDate(mingguLaluAwal.getDate()-7);
+      const awal = new Date(mingguLaluAwal); awal.setDate(awal.getDate()-2);
+      const akhir = new Date(mingguLaluAwal); akhir.setDate(akhir.getDate()+4);
       document.getElementById('lk-filter-dari').value = _fmtInput(awal);
       document.getElementById('lk-filter-sampai').value = _fmtInput(akhir);
     } else if (which === 'bulan-ini') {
@@ -799,6 +806,22 @@ END $$;</textarea>
   function getFilterISO() {
     return { dariISO: document.getElementById('lk-filter-dari').value || '', sampaiISO: document.getElementById('lk-filter-sampai').value || '' };
   }
+  // Periode Beban & Payroll = periode Laba Kotor digeser +1 hari (mulai) & +1 hari (akhir) -> Minggu-Sabtu (7 hari).
+  // Contoh: Laba Kotor 18-24 (Sab-Jum) -> Beban & Payroll otomatis jadi 19-25 (Minggu-Sabtu).
+  // Cutoff akhir periode selalu di hari Sabtu. Kalau admin input beban/payroll di hari Minggu, otomatis
+  // masuk ke periode BARU (minggu berjalan berikutnya) karena Minggu jadi hari pertama periode itu -
+  // bukan nyambung ke periode lama. Dengan begini tidak ada tanggal yang bisa "hilang" walau admin lupa aturan.
+  // Kalau salah satu/kedua tanggal filter kosong (mode "SEMUA DATA"), tidak ada yang bisa digeser -> ISO kosong dibiarkan kosong.
+  function _geserISO(iso, hari) {
+    if (!iso) return '';
+    const d = new Date(iso + 'T00:00:00');
+    d.setDate(d.getDate() + hari);
+    return _fmtInput(d);
+  }
+  function getFilterBebanISO() {
+    const { dariISO, sampaiISO } = getFilterISO();
+    return { dariISO: _geserISO(dariISO, 1), sampaiISO: _geserISO(sampaiISO, 1) };
+  }
   function _updatePeriodeLabel() {
     const { dariISO, sampaiISO } = getFilterISO();
     const label = document.getElementById('lk-periode-label');
@@ -807,6 +830,16 @@ END $$;</textarea>
     else if (dariISO && sampaiISO) label.textContent = fmt(dariISO) + ' — ' + fmt(sampaiISO);
     else if (dariISO) label.textContent = 'SEJAK ' + fmt(dariISO);
     else label.textContent = 'SAMPAI ' + fmt(sampaiISO);
+
+    // Label periode Beban & Payroll (digeser +2/+1 hari dari periode Laba Kotor)
+    const bebanLabel = document.getElementById('lk-periode-beban-label');
+    if (bebanLabel) {
+      const { dariISO: bDari, sampaiISO: bSampai } = getFilterBebanISO();
+      if (!bDari && !bSampai) bebanLabel.textContent = 'SEMUA DATA';
+      else if (bDari && bSampai) bebanLabel.textContent = fmt(bDari) + ' — ' + fmt(bSampai);
+      else if (bDari) bebanLabel.textContent = 'SEJAK ' + fmt(bDari);
+      else bebanLabel.textContent = 'SAMPAI ' + fmt(bSampai);
+    }
   }
 
   // ==================== DATA CACHE ====================
@@ -873,7 +906,7 @@ END $$;</textarea>
     if (icon) icon.classList.add('fa-spin');
     document.getElementById('lk-payroll-status').textContent = 'Menarik data...';
     try {
-      const { dariISO, sampaiISO } = getFilterISO();
+      const { dariISO, sampaiISO } = getFilterBebanISO();
       const inRange = (iso) => {
         if (!iso) return false;
         if (dariISO && iso < dariISO) return false;
@@ -902,7 +935,7 @@ END $$;</textarea>
 
   // ==================== BEBAN MANUAL (tabel baru di Inventory) ====================
   async function muatBebanManual() {
-    const { dariISO, sampaiISO } = getFilterISO();
+    const { dariISO, sampaiISO } = getFilterBebanISO();
     _bebanHalaman = 1;
     try {
       let q = sbInv.from('beban_operasional').select('*').order('tanggal', { ascending: false }).order('id', { ascending: false });
