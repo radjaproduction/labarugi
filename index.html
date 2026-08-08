@@ -551,16 +551,14 @@ END $$;</textarea>
   // di-paginate — fungsi ini mengambil semua baris dengan mengulang per 1000 baris,
   // diurutkan berdasarkan 'id' ASC supaya paginasi stabil (sama seperti fetchAllRows
   // di Inventory).
-  async function fetchAllRows(client, table, selectStr = '*') {
+  async function fetchAllRows(client, table, selectStr = '*', orderBy = [{ column: 'id', ascending: true }]) {
     const PAGE = 1000;
     let from = 0;
     let all = [];
     while (true) {
-      const { data, error } = await client
-        .from(table)
-        .select(selectStr)
-        .order('id', { ascending: true })
-        .range(from, from + PAGE - 1);
+      let q = client.from(table).select(selectStr);
+      orderBy.forEach(o => { q = q.order(o.column, { ascending: o.ascending }); });
+      const { data, error } = await q.range(from, from + PAGE - 1);
       if (error) { console.warn('fetchAllRows gagal:', table, error.message); break; }
       all = all.concat(data || []);
       if (!data || data.length < PAGE) break;
@@ -914,12 +912,12 @@ END $$;</textarea>
         return true;
       };
       const [inputRes, tambahanRes] = await Promise.all([
-        sbPay.from('payroll_input').select('id, data'),
-        sbPay.from('tambahan').select('id, data'),
+        fetchAllRows(sbPay, 'payroll_input', 'id, data'),
+        fetchAllRows(sbPay, 'tambahan', 'id, data'),
       ]);
       let totalKotor = 0, totalTambahan = 0;
-      (inputRes.data || []).forEach(r => { const d = r.data || {}; if (inRange((d.tanggalISO||'').slice(0,10))) totalKotor += (d.jumlah || 0); });
-      (tambahanRes.data || []).forEach(r => { const d = r.data || {}; if (inRange((d.tanggalISO||'').slice(0,10))) totalTambahan += (d.total || 0); });
+      (inputRes || []).forEach(r => { const d = r.data || {}; if (inRange((d.tanggalISO||'').slice(0,10))) totalKotor += (d.jumlah || 0); });
+      (tambahanRes || []).forEach(r => { const d = r.data || {}; if (inRange((d.tanggalISO||'').slice(0,10))) totalTambahan += (d.total || 0); });
 
       // Total Dana Disiapkan (gross, sebelum potongan pinjaman) - samakan dengan kartu biru di Payroll app
       _cachePayroll = totalKotor + totalTambahan;
@@ -937,9 +935,10 @@ END $$;</textarea>
     const { dariISO, sampaiISO } = getFilterBebanISO();
     _bebanHalaman = 1;
     try {
-      let q = sbInv.from('beban_operasional').select('*').order('tanggal', { ascending: false }).order('id', { ascending: false });
-      const { data, error } = await q;
-      if (error) throw error;
+      const data = await fetchAllRows(sbInv, 'beban_operasional', '*', [
+        { column: 'tanggal', ascending: false },
+        { column: 'id', ascending: false }
+      ]);
       _bebanTableMissing = false;
       _cacheBebanManual = (data || []).filter(r => {
         const iso = (r.tanggal || '').slice(0, 10);
