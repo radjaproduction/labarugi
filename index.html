@@ -769,7 +769,7 @@ END $$;</textarea>
   function setFilterQuick(which) {
     const now = new Date();
     if (which === 'minggu-ini') {
-      // Minggu berjalan (operasional, Beban & Payroll) = Senin-Sabtu yang memuat hari ini.
+      // Minggu berjalan (operasional, Beban & Payroll) = Minggu-Sabtu yang memuat hari ini (konsisten dengan Payroll app).
       // Filter yang di-set di UI adalah periode LABA KOTOR (Sabtu-Jumat), yaitu minggu berjalan digeser -2/-1 hari,
       // supaya nanti getFilterBebanISO() menggesernya lagi +2/+1 dan menghasilkan balik minggu berjalan yang benar.
       const mingguAwal = _awalMingguIni(now); // Senin minggu berjalan
