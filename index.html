@@ -913,17 +913,16 @@ END $$;</textarea>
         if (sampaiISO && iso > sampaiISO) return false;
         return true;
       };
-      const [inputRes, tambahanRes, bayarRes] = await Promise.all([
+      const [inputRes, tambahanRes] = await Promise.all([
         sbPay.from('payroll_input').select('id, data'),
         sbPay.from('tambahan').select('id, data'),
-        sbPay.from('payroll_bayar').select('id, data'),
       ]);
-      let totalKotor = 0, totalTambahan = 0, totalPotongan = 0;
+      let totalKotor = 0, totalTambahan = 0;
       (inputRes.data || []).forEach(r => { const d = r.data || {}; if (inRange((d.tanggalISO||'').slice(0,10))) totalKotor += (d.jumlah || 0); });
       (tambahanRes.data || []).forEach(r => { const d = r.data || {}; if (inRange((d.tanggalISO||'').slice(0,10))) totalTambahan += (d.total || 0); });
-      (bayarRes.data || []).forEach(r => { const d = r.data || {}; if (!d.luarGaji && inRange((d.tanggalISO||'').slice(0,10))) totalPotongan += (d.bayar || 0); });
 
-      _cachePayroll = totalKotor + totalTambahan - totalPotongan;
+      // Total Dana Disiapkan (gross, sebelum potongan pinjaman) - samakan dengan kartu biru di Payroll app
+      _cachePayroll = totalKotor + totalTambahan;
       document.getElementById('lk-payroll-status').textContent = 'Ditarik dari Aplikasi Payroll';
     } catch (e) {
       _cachePayroll = 0;
